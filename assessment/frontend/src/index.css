@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-purple-50:  #EEEDFE;
+  --color-purple-100: #CECBF6;
+  --color-purple-200: #AFA9EC;
+  --color-purple-400: #7F77DD;
+  --color-purple-600: #534AB7;
+  --color-purple-800: #3C3489;
+  --color-purple-900: #26215C;
+
+  --color-teal-50:  #E1F5EE;
+  --color-teal-100: #9FE1CB;
+  --color-teal-400: #1D9E75;
+  --color-teal-600: #0F6E56;
+}
+
+html, body, #root {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+}

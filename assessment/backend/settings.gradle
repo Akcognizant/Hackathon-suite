@@ -1,0 +1,17 @@
+// Resolve the Spring Boot / dependency-management plugins (and their transitive jars)
+// through Google's Maven Central mirror first — the corporate proxy 403s binary jars
+// from repo.maven.apache.org, which plugins.gradle.org falls back to.
+pluginManagement {
+    repositories {
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            maven {
+                name = 'GoogleMavenCentralMirror'
+                url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+            }
+        }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'backend'

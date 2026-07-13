@@ -1,0 +1,33 @@
+// ── Cognizant corporate network fix (plugin classpath) ──
+// The SSL-inspection proxy returns HTTP 403 for BINARY (.jar) downloads while
+// allowing .pom metadata through. The Gradle Plugin Portal (plugins-artifacts.
+// gradle.org) serves plugin jars from a host the proxy blocks, so the default
+// plugins{} resolution fails. Mirror plugin resolution through Google's Maven
+// Central mirror (same fix used for dependencies in build.gradle), and map the
+// Spring plugin ids to their real Maven Central modules — the portal-only
+// marker artifacts can't be served from a Maven repo. Guarded by an OS check so
+// Linux/AWS CodeBuild CI keeps using the portal unchanged.
+pluginManagement {
+	repositories {
+		if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+			maven {
+				name = 'GoogleMavenCentralMirror'
+				url = 'https://maven-central.storage-download.googleapis.com/maven2/'
+			}
+		}
+		gradlePluginPortal()
+		mavenCentral()
+	}
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.id == 'org.springframework.boot') {
+				useModule("org.springframework.boot:spring-boot-gradle-plugin:${requested.version}")
+			}
+			if (requested.id.id == 'io.spring.dependency-management') {
+				useModule("io.spring.gradle:dependency-management-plugin:${requested.version}")
+			}
+		}
+	}
+}
+
+rootProject.name = 'hackathon'
