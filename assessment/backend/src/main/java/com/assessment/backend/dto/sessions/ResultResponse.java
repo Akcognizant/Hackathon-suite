@@ -50,5 +50,18 @@ public class ResultResponse {
         private Boolean isSkipped;     // nothing submitted
         private Integer timeTakenSeconds;
         private Integer attemptCount;
+
+        // ── Review payload (populated on the completed-result view) ──
+        // Enough to re-render the question in the results accordion. Revealing
+        // the correct answer here is intentional — the attempt is already
+        // submitted, so this is the candidate's answer-review surface.
+        private Object patternData;    // MCQ: the pattern visual (null for activities)
+        private Object options;        // MCQ: all options in order (null for activities)
+        private String prompt;         // activity instruction (null for MCQ)
+        private Object items;          // activity: draggable items (null for MCQ)
+        private Object zones;          // activity: drop zones (null for MCQ / ordering)
+        private String suffix;         // fill-blank only
+        private Object answer;         // activity: the candidate's submitted placement/order
+        private Object answerKey;      // activity: the correct placement/order
     }
 }

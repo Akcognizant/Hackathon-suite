@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import HackathonGate from '../components/HackathonGate'
+import PatternDisplay from '../components/PatternDisplay'
 import { fetchResult } from '../api'
 
 // ─────────────────────────────────────────────
@@ -81,12 +82,123 @@ function formatTime(s) {
 }
 
 // ─────────────────────────────────────────────
+// Expanded review — MCQ: show every option with the candidate's pick and the
+// correct answer highlighted, above the re-rendered pattern visual.
+// ─────────────────────────────────────────────
+function McqReview({ r }) {
+    const options = Array.isArray(r.options) ? r.options : []
+    return (
+        <div className="flex flex-col gap-4">
+            {r.patternData && (
+                <div className="rounded-xl p-5 flex items-center justify-center min-h-24" style={{ backgroundColor: '#f7f7f8' }}>
+                    <PatternDisplay question={{ type: r.questionType, pattern_data: r.patternData }} />
+                </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {options.map((option, i) => {
+                    const isCorrect = i === r.correctOptionIndex
+                    const isSelected = i === r.selectedOptionIndex
+                    // correct → green; your wrong pick → red; everything else neutral.
+                    const sc = isCorrect
+                        ? { color: '#0F6E56', bg: '#E1F5EE', border: '#1D9E75' }
+                        : isSelected
+                            ? { color: '#A32D2D', bg: '#FFF0F0', border: '#E5A3A3' }
+                            : { color: '#374151', bg: '#fff', border: '#e5e7eb' }
+                    const badge = isSelected && isCorrect ? 'Your answer · Correct'
+                        : isCorrect ? 'Correct answer'
+                            : isSelected ? 'Your answer' : null
+                    return (
+                        <div key={i} className="flex items-center gap-3 rounded-xl border px-4 h-14"
+                            style={{ backgroundColor: sc.bg, borderColor: sc.border, borderWidth: (isCorrect || isSelected) ? '1.5px' : '1px' }}>
+                            <span className="text-[10px] font-normal opacity-50 font-mono" style={{ color: sc.color }}>{String.fromCharCode(65 + i)}</span>
+                            <span className="text-sm font-medium font-mono flex-1 min-w-0 truncate" style={{ color: sc.color }}>{option}</span>
+                            {badge && (
+                                <span className="text-[10px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap"
+                                    style={{ color: sc.color, backgroundColor: '#ffffff' }}>{badge}</span>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
+// Expanded review — activity: compare the candidate's placement/order against
+// the answer key. Ordering activities (answerKey is a list) show position-by-
+// position; mapping activities (answerKey is an object) show item-by-item.
+// ─────────────────────────────────────────────
+function DragReview({ r }) {
+    const items = Array.isArray(r.items) ? r.items : []
+    const zones = Array.isArray(r.zones) ? r.zones : []
+    const labelOf = (arr, id) => arr.find((x) => x.id === id)?.label ?? id
+    const itemLabel = (id) => labelOf(items, id)
+    const zoneLabel = (id) => (id == null ? null : labelOf(zones, id))
+
+    const Cell = ({ correct, children }) => (
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg"
+            style={correct ? { color: '#0F6E56', backgroundColor: '#E1F5EE' } : { color: '#A32D2D', backgroundColor: '#FFF0F0' }}>
+            {correct
+                ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
+            {children}
+        </span>
+    )
+
+    // Ordering activities: answerKey = [itemId, ...] in the correct order.
+    if (Array.isArray(r.answerKey)) {
+        const yourOrder = Array.isArray(r.answer?.order) ? r.answer.order : []
+        return (
+            <div className="flex flex-col gap-2">
+                {r.answerKey.map((correctId, i) => {
+                    const yourId = yourOrder[i]
+                    const ok = yourId === correctId
+                    return (
+                        <div key={i} className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2" style={{ backgroundColor: '#fff' }}>
+                            <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: '#534AB7' }}>{i + 1}</span>
+                            <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <Cell correct={ok}>You: {yourId ? itemLabel(yourId) : '—'}</Cell>
+                                {!ok && <span className="text-xs text-gray-400">Correct: <span className="font-medium text-gray-600">{itemLabel(correctId)}</span></span>}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        )
+    }
+
+    // Mapping activities: answerKey = { itemId: zoneId }.
+    const key = r.answerKey && typeof r.answerKey === 'object' ? r.answerKey : {}
+    const placements = r.answer?.placements && typeof r.answer.placements === 'object' ? r.answer.placements : {}
+    return (
+        <div className="flex flex-col gap-2">
+            {Object.entries(key).map(([itemId, correctZone]) => {
+                const yourZone = placements[itemId]
+                const ok = yourZone != null && yourZone === correctZone
+                return (
+                    <div key={itemId} className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2 flex-wrap" style={{ backgroundColor: '#fff' }}>
+                        <span className="text-sm font-medium text-gray-700 min-w-24">{itemLabel(itemId)}</span>
+                        <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <Cell correct={ok}>You: {yourZone ? zoneLabel(yourZone) : 'Not placed'}</Cell>
+                            {!ok && <span className="text-xs text-gray-400">Correct: <span className="font-medium text-gray-600">{zoneLabel(correctZone)}</span></span>}
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────
 export default function ResultPage() {
     const { sessionId } = useParams()
     const navigate = useNavigate()
     const { data, loading, error } = useResultData(sessionId)
+    const [expanded, setExpanded] = useState({})   // { [questionId]: bool }
+    const toggle = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
@@ -190,60 +302,76 @@ export default function ResultPage() {
                                         incorrect: { color: '#A32D2D', bg: '#FFF0F0' },
                                         skipped: { color: '#9ca3af', bg: '#f3f4f6' },
                                     }[status]
+                                    const isOpen = !!expanded[r.questionId]
                                     return (
-                                        <div key={r.questionId}
-                                            className="px-6 py-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
-                                            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                                                style={{ backgroundColor: sc.bg }}>
-                                                {status === 'skipped' ? (
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                                                ) : status === 'incorrect' ? (
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                                ) : (
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-gray-700 truncate">
-                                                    <span className="text-gray-400 mr-2 font-mono text-xs">Q{r.questionIndex}</span>
-                                                    {r.questionText}
-                                                </p>
-                                                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                                    {sec === 'pattern' ? (
-                                                        r.isSkipped ? (
-                                                            <span className="text-xs text-gray-400">Skipped</span>
-                                                        ) : (
-                                                            <>
-                                                                <span className="text-xs" style={{ color: r.isCorrect ? '#1D9E75' : '#A32D2D' }}>
-                                                                    Your answer: <span className="font-medium font-mono">{r.selectedOption}</span>
-                                                                </span>
-                                                                {!r.isCorrect && (
-                                                                    <span className="text-xs text-gray-400">
-                                                                        Correct: <span className="font-medium font-mono text-gray-600">{r.correctOption}</span>
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )
+                                        <div key={r.questionId}>
+                                            {/* Row header — click to expand/collapse the detailed review */}
+                                            <button type="button" onClick={() => toggle(r.questionId)}
+                                                aria-expanded={isOpen}
+                                                className="w-full text-left px-6 py-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
+                                                <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                                                    style={{ backgroundColor: sc.bg }}>
+                                                    {status === 'skipped' ? (
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                                    ) : status === 'incorrect' ? (
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                                                     ) : (
-                                                        <>
-                                                            <span className="text-xs" style={{ color: sc.color }}>
-                                                                {r.correctCount}/{r.totalCount} placed correctly
-                                                            </span>
-                                                            {r.incorrectPlacements > 0 && (
-                                                                <span className="text-xs text-gray-400">{r.incorrectPlacements} misplacement{r.incorrectPlacements !== 1 ? 's' : ''}</span>
-                                                            )}
-                                                            {r.dragAttempts > 0 && (
-                                                                <span className="text-xs text-gray-300">{r.dragAttempts} drag{r.dragAttempts !== 1 ? 's' : ''}</span>
-                                                            )}
-                                                        </>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sc.color} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
                                                     )}
                                                 </div>
-                                            </div>
 
-                                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                                <span className="text-xs font-mono text-gray-400">{formatTime(r.timeTakenSeconds || 0)}</span>
-                                            </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-gray-700 truncate">
+                                                        <span className="text-gray-400 mr-2 font-mono text-xs">Q{r.questionIndex}</span>
+                                                        {r.questionText}
+                                                    </p>
+                                                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                                        {sec === 'pattern' ? (
+                                                            r.isSkipped ? (
+                                                                <span className="text-xs text-gray-400">Skipped</span>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="text-xs" style={{ color: r.isCorrect ? '#1D9E75' : '#A32D2D' }}>
+                                                                        Your answer: <span className="font-medium font-mono">{r.selectedOption}</span>
+                                                                    </span>
+                                                                    {!r.isCorrect && (
+                                                                        <span className="text-xs text-gray-400">
+                                                                            Correct: <span className="font-medium font-mono text-gray-600">{r.correctOption}</span>
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            )
+                                                        ) : (
+                                                            <>
+                                                                <span className="text-xs" style={{ color: sc.color }}>
+                                                                    {r.correctCount}/{r.totalCount} placed correctly
+                                                                </span>
+                                                                {r.incorrectPlacements > 0 && (
+                                                                    <span className="text-xs text-gray-400">{r.incorrectPlacements} misplacement{r.incorrectPlacements !== 1 ? 's' : ''}</span>
+                                                                )}
+                                                                {r.dragAttempts > 0 && (
+                                                                    <span className="text-xs text-gray-300">{r.dragAttempts} drag{r.dragAttempts !== 1 ? 's' : ''}</span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 flex-shrink-0 mt-0.5">
+                                                    <span className="text-xs font-mono text-gray-400">{formatTime(r.timeTakenSeconds || 0)}</span>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                        className="transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                                                        <polyline points="6 9 12 15 18 9" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+
+                                            {/* Expanded detail — all options / placements with the correct answer revealed */}
+                                            {isOpen && (
+                                                <div className="px-6 pb-5 pt-1" style={{ backgroundColor: '#fcfcfd' }}>
+                                                    {sec === 'pattern' ? <McqReview r={r} /> : <DragReview r={r} />}
+                                                </div>
+                                            )}
                                         </div>
                                     )
                                 })}

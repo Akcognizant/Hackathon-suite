@@ -341,12 +341,22 @@ public class SessionService {
                     correctOption = String.valueOf(opts.get(correctIdx));
             }
 
+            boolean isDrag = "drag".equals(q.getSection());
             results.add(new ResultResponse.QuestionResult(
                     q.getId(), q.getSection(), q.getQuestionType(), q.getQuestionText(),
                     cc, tc,
                     r.getSelectedOptionIndex(), correctIdx, selectedOption, correctOption,
                     r.getIncorrectPlacements(), r.getDragAttempts(),
-                    r.getIsCorrect(), !attempted, r.getTimeTakenSeconds(), r.getAttemptCount()));
+                    r.getIsCorrect(), !attempted, r.getTimeTakenSeconds(), r.getAttemptCount(),
+                    // review payload — MCQ visuals vs. activity board (see ResultResponse)
+                    isDrag ? null : q.getPatternData(),
+                    isDrag ? null : q.getOptions(),
+                    isDrag ? q.getPrompt() : null,
+                    isDrag ? q.getItems() : null,
+                    isDrag ? q.getZones() : null,
+                    isDrag ? q.getSuffix() : null,
+                    isDrag ? r.getAnswer() : null,
+                    isDrag ? q.getAnswerKey() : null));
         }
 
         return new ResultResponse(
