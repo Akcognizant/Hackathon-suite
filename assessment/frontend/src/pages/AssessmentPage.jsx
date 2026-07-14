@@ -180,15 +180,15 @@ export default function AssessmentPage() {
 
     // ── Guards (after all hooks) ──
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8fafc' }}>
             <div className="flex flex-col items-center gap-3">
                 <span className="w-8 h-8 rounded-full border-2 border-purple-200 animate-spin" style={{ borderTopColor: '#534AB7' }} />
-                <p className="text-sm text-gray-400">Preparing your assessment…</p>
+                <p className="text-sm text-slate-400">Preparing your assessment…</p>
             </div>
         </div>
     )
     if (loadError) return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8fafc' }}>
             <div className="text-center flex flex-col gap-3 max-w-sm px-6">
                 <p className="text-sm text-gray-600">{loadError}</p>
                 <button onClick={() => navigate('/dashboard')} className="text-sm font-medium" style={{ color: '#534AB7' }}>Back to dashboard</button>
@@ -196,7 +196,7 @@ export default function AssessmentPage() {
         </div>
     )
     if (!questions.length) return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8fafc' }}>
             <div className="text-center flex flex-col gap-3">
                 <p className="text-sm text-gray-600">No questions are available right now.</p>
                 <button onClick={() => navigate('/dashboard')} className="text-sm font-medium" style={{ color: '#534AB7' }}>Back to dashboard</button>
@@ -335,10 +335,10 @@ export default function AssessmentPage() {
     const lowTime = remaining != null && remaining <= 60
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8fafc' }}>
 
             {/* ── Top bar ──────────────────────────── */}
-            <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
                 <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: '#534AB7', color: '#CECBF6' }}>
@@ -347,26 +347,26 @@ export default function AssessmentPage() {
                                 <line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" />
                             </svg>
                         </div>
-                        <span className="text-xs font-medium text-gray-400">PatternIQ</span>
+                        <span className="text-xs font-medium text-slate-400">PatternIQ</span>
                     </div>
 
                     <div className="flex-1 max-w-xs flex flex-col items-center gap-1">
-                        <p className="text-xs text-gray-400">
-                            Question <span className="font-medium text-gray-700">{currentIndex + 1}</span> of {questions.length}
+                        <p className="text-xs text-slate-400">
+                            Question <span className="font-medium text-slate-700">{currentIndex + 1}</span> of {questions.length}
                             <span className="ml-2 text-gray-300">·</span>
                             <span className="ml-2">{answeredCount} answered</span>
                         </p>
-                        <div className="w-full h-1 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="w-full h-1 rounded-full bg-slate-100 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progressPct}%`, backgroundColor: '#534AB7' }} />
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="flex flex-col items-end">
-                            <span className="text-xs font-mono font-medium text-gray-700">{formatTime(questionTimer.seconds)}</span>
-                            <span className="text-[10px] text-gray-400">this question</span>
+                            <span className="text-xs font-mono font-medium text-slate-700">{formatTime(questionTimer.seconds)}</span>
+                            <span className="text-[10px] text-slate-400">this question</span>
                         </div>
-                        <div className="w-px h-6 bg-gray-100" />
+                        <div className="w-px h-6 bg-slate-100" />
                         <div className="flex flex-col items-end">
                             <span className="text-xs font-mono font-medium" style={{ color: lowTime ? '#A32D2D' : '#534AB7' }}>
                                 {remaining != null ? formatTime(remaining) : '--:--'}
@@ -382,10 +382,10 @@ export default function AssessmentPage() {
                 <div className="w-full max-w-2xl flex flex-col gap-6">
 
                     {/* Question palette — grouped by section */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col gap-3">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-3">
                         <div className="flex items-center justify-between flex-wrap gap-y-2">
-                            <span className="text-xs font-medium text-gray-500">Questions</span>
-                            <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                            <span className="text-xs font-medium text-slate-500">Questions</span>
+                            <div className="flex items-center gap-3 text-[10px] text-slate-400">
                                 <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: '#1D9E75' }} />Answered</span>
                                 <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: '#F59E0B' }} />For review</span>
                                 <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: '#d1d5db' }} />Unanswered</span>
@@ -393,7 +393,7 @@ export default function AssessmentPage() {
                         </div>
                         {['pattern', 'drag'].map(sec => (
                             <div key={sec} className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-medium uppercase tracking-widest text-gray-400">{SECTION_LABEL[sec]}</span>
+                                <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">{SECTION_LABEL[sec]}</span>
                                 <div className="flex flex-wrap gap-2">
                                     {questions.map((q, i) => {
                                         if (q.section !== sec) return null
@@ -419,20 +419,20 @@ export default function AssessmentPage() {
                     </div>
 
                     {/* Question / activity card */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
                         <div className="flex flex-col gap-1.5">
                             <p className="text-[10px] font-medium tracking-widest uppercase" style={{ color: '#1D9E75' }}>
                                 {SECTION_LABEL[current.section]}
                             </p>
-                            <h2 className="text-base font-medium text-gray-800">{current.question_text}</h2>
+                            <h2 className="text-base font-semibold text-slate-800">{current.question_text}</h2>
                             {!isMcq(current) && current.prompt && (
-                                <p className="text-sm text-gray-500">{current.prompt}</p>
+                                <p className="text-sm text-slate-500">{current.prompt}</p>
                             )}
                         </div>
 
                         {isMcq(current) ? (
                             <>
-                                <div className="rounded-xl p-6 flex items-center justify-center min-h-28" style={{ backgroundColor: '#f7f7f8' }}>
+                                <div className="rounded-xl p-6 flex items-center justify-center min-h-28" style={{ backgroundColor: '#f8fafc' }}>
                                     <PatternDisplay question={current} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
@@ -467,7 +467,7 @@ export default function AssessmentPage() {
                     {/* Bottom bar */}
                     <div className="flex items-center justify-between">
                         <button onClick={goPrev} disabled={currentIndex === 0}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:border-gray-300">
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-500 bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:border-gray-300">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                                 <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
                             </svg>

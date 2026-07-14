@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import HackathonGate from '../components/HackathonGate'
 import { fetchHistory, fetchGateStatus } from '../api'
 
@@ -11,7 +12,7 @@ const ATTEMPT_LIMIT = 3
 const PLATFORM_STATS = [
     { label: 'Candidates assessed', value: '48,200+', color: '#534AB7' },
     { label: 'Assessments completed', value: '126K', color: '#1D9E75' },
-    { label: 'Hiring teams', value: '340', color: '#26215C' },
+    { label: 'Hiring teams', value: '340', color: '#0f172a' },
     { label: 'Avg. completion rate', value: '94%', color: '#534AB7' },
 ]
 
@@ -125,16 +126,16 @@ export default function Dashboard() {
         : `Attempt limit reached (${ATTEMPT_LIMIT}/${ATTEMPT_LIMIT})`
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8fafc' }}>
             <Navbar />
 
             {/* Hero */}
-            <section className="w-full" style={{ backgroundColor: '#26215C' }}>
+            <section className="w-full" style={{ backgroundColor: '#0f172a' }}>
                 <div className="max-w-5xl mx-auto w-full px-6 py-16 flex flex-col gap-6">
                     <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#1D9E75' }}>
                         Welcome back, {firstName}
                     </p>
-                    <h1 className="text-3xl md:text-4xl font-medium leading-tight max-w-2xl"
+                    <h1 className="text-3xl md:text-4xl font-semibold leading-tight max-w-2xl"
                         style={{ color: '#EEEDFE' }}>
                         Measure how people think — not just what they know.
                     </h1>
@@ -194,13 +195,13 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {PLATFORM_STATS.map(({ label, value, color }) => (
                             <div key={label}
-                                className="flex flex-col gap-1 px-5 py-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+                                className="flex flex-col gap-1 px-5 py-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <span className="text-2xl font-medium font-mono" style={{ color }}>{value}</span>
-                                <span className="text-xs text-gray-400">{label}</span>
+                                <span className="text-xs text-slate-400">{label}</span>
                             </div>
                         ))}
                     </div>
-                    <p className="text-xs text-gray-400 px-1">
+                    <p className="text-xs text-slate-400 px-1">
                         Platform metrics across all PatternIQ workspaces, updated daily.
                     </p>
                 </section>
@@ -211,14 +212,14 @@ export default function Dashboard() {
                         <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#1D9E75' }}>
                             Why PatternIQ
                         </p>
-                        <h2 className="text-xl font-medium text-gray-900">
+                        <h2 className="text-xl font-semibold text-slate-900">
                             Built for accurate, insightful assessment
                         </h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {CAPABILITIES.map(({ title, body, icon }) => (
                             <div key={title}
-                                className="flex items-start gap-4 px-5 py-5 rounded-2xl border border-gray-100 bg-white">
+                                className="flex items-start gap-4 px-5 py-5 rounded-2xl border border-slate-200 bg-white">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                                     style={{ backgroundColor: '#EEEDFE' }}>
                                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
@@ -227,8 +228,8 @@ export default function Dashboard() {
                                     </svg>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <h3 className="text-sm font-medium text-gray-800">{title}</h3>
-                                    <p className="text-xs text-gray-500 leading-relaxed">{body}</p>
+                                    <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+                                    <p className="text-xs text-slate-500 leading-relaxed">{body}</p>
                                 </div>
                             </div>
                         ))}
@@ -241,17 +242,17 @@ export default function Dashboard() {
                         <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#1D9E75' }}>
                             How it works
                         </p>
-                        <h2 className="text-xl font-medium text-gray-900">
+                        <h2 className="text-xl font-semibold text-slate-900">
                             From click to insight in three steps
                         </h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {STEPS.map(({ n, title, body }) => (
                             <div key={n}
-                                className="flex flex-col gap-2 px-5 py-5 rounded-2xl border border-gray-100 bg-white">
-                                <span className="text-lg font-medium font-mono" style={{ color: '#7F77DD' }}>{n}</span>
-                                <h3 className="text-sm font-medium text-gray-800">{title}</h3>
-                                <p className="text-xs text-gray-500 leading-relaxed">{body}</p>
+                                className="flex flex-col gap-2 px-5 py-5 rounded-2xl border border-slate-200 bg-white">
+                                <span className="text-lg font-semibold font-mono" style={{ color: '#7F77DD' }}>{n}</span>
+                                <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">{body}</p>
                             </div>
                         ))}
                     </div>
@@ -262,14 +263,14 @@ export default function Dashboard() {
                     className="rounded-2xl px-8 py-10 flex flex-col md:flex-row md:items-center justify-between gap-6"
                     style={{ backgroundColor: '#EEEDFE' }}>
                     <div className="flex flex-col gap-1">
-                        <h2 className="text-lg font-medium" style={{ color: '#26215C' }}>
+                        <h2 className="text-lg font-semibold" style={{ color: '#0f172a' }}>
                             {gate?.passed
                                 ? 'You passed — the hackathon awaits'
                                 : startLocked
                                     ? "You've reached the attempt limit"
                                     : 'Ready to test your pattern recognition skills?'}
                         </h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-slate-500">
                             {gate?.passed
                                 ? 'Head to the hackathon portal from the banner above.'
                                 : startLocked
@@ -296,6 +297,7 @@ export default function Dashboard() {
                 </section>
 
             </main>
+            <Footer />
         </div>
     )
 }
