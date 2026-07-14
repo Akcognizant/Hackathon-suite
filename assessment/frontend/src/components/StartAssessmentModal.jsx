@@ -17,7 +17,7 @@ export default function StartAssessmentModal({ onClose }) {
 
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-lg w-full max-w-md p-6 flex flex-col gap-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg w-full max-w-md p-6 flex flex-col gap-5">
 
                     {/* Icon + heading */}
                     <div className="flex flex-col gap-3">
@@ -32,8 +32,8 @@ export default function StartAssessmentModal({ onClose }) {
                             </svg>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <h2 className="text-base font-medium text-gray-900">Ready to begin?</h2>
-                            <p className="text-sm text-gray-500 leading-relaxed">
+                            <h2 className="text-base font-semibold text-slate-900">Ready to begin?</h2>
+                            <p className="text-sm text-slate-500 leading-relaxed">
                                 Please read the following before starting your assessment.
                             </p>
                         </div>
@@ -74,8 +74,8 @@ export default function StartAssessmentModal({ onClose }) {
                     <div className="flex justify-between px-1">
                         {[['15', 'questions'], ['2', 'sections'], ['~20m', 'duration']].map(([val, lbl]) => (
                             <div key={lbl} className="flex flex-col items-center gap-0.5">
-                                <span className="text-base font-medium font-mono" style={{ color: '#26215C' }}>{val}</span>
-                                <span className="text-xs text-gray-400">{lbl}</span>
+                                <span className="text-base font-medium font-mono" style={{ color: '#0f172a' }}>{val}</span>
+                                <span className="text-xs text-slate-400">{lbl}</span>
                             </div>
                         ))}
                     </div>
@@ -84,8 +84,8 @@ export default function StartAssessmentModal({ onClose }) {
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-medium
-                         text-gray-600 bg-white transition-all hover:border-gray-300 hover:bg-gray-50"
+                            className="flex-1 h-10 rounded-xl border border-slate-300 text-sm font-medium
+                         text-slate-600 bg-white transition-all hover:border-slate-400 hover:bg-slate-50"
                         >
                             Not yet
                         </button>

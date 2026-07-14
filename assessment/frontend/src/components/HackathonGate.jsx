@@ -44,8 +44,8 @@ export default function HackathonGate() {
           <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#0F6E56' }}>
             Assessment cleared
           </p>
-          <h3 className="text-lg font-medium text-gray-900">You’ve unlocked the Hackathon Portal 🎉</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-slate-900">You’ve unlocked the Hackathon Portal 🎉</h3>
+          <p className="text-sm text-slate-600">
             You scored {Math.round(gate.bestAccuracy)}% (≥ {threshold}% required). Head over — no second login needed.
           </p>
           {error && <p className="text-sm font-medium" style={{ color: '#A32D2D' }}>{error}</p>}
@@ -72,8 +72,8 @@ export default function HackathonGate() {
         <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#A32D2D' }}>
           Hackathon locked
         </p>
-        <h3 className="text-lg font-medium text-gray-900">You can’t attempt the hackathon</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-slate-900">You can’t attempt the hackathon</h3>
+        <p className="text-sm text-slate-600">
           You’ve used all {gate.maxAttempts} attempts without reaching {threshold}%
           (best: {Math.round(gate.bestAccuracy)}%). The hackathon portal is not available.
         </p>
@@ -88,8 +88,8 @@ export default function HackathonGate() {
       <p className="text-xs font-medium tracking-widest uppercase" style={{ color: '#7A4F00' }}>
         Hackathon locked
       </p>
-      <h3 className="text-lg font-medium text-gray-900">Score {threshold}% to unlock the hackathon</h3>
-      <p className="text-sm text-gray-600">
+      <h3 className="text-lg font-semibold text-slate-900">Score {threshold}% to unlock the hackathon</h3>
+      <p className="text-sm text-slate-600">
         {gate.attemptsRemaining} of {gate.maxAttempts} attempt{gate.attemptsRemaining !== 1 ? 's' : ''} remaining.
         {gate.attemptsUsed > 0 && ` Best so far: ${Math.round(gate.bestAccuracy)}%.`}
       </p>

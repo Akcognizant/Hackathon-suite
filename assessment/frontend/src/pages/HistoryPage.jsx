@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { fetchHistory } from '../api'
 
 function formatDate(iso) {
@@ -44,7 +45,7 @@ export default function HistoryPage() {
         : null
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8fafc' }}>
             <Navbar />
 
             <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10 flex flex-col gap-8">
@@ -55,10 +56,10 @@ export default function HistoryPage() {
                         style={{ color: '#1D9E75' }}>
                         Your progress
                     </p>
-                    <h1 className="text-2xl font-medium text-gray-900">
+                    <h1 className="text-2xl font-semibold text-slate-900">
                         Assessment history
                     </h1>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-slate-500">
                         Review every attempt, revisit results, and dig into the analytics.
                     </p>
                 </div>
@@ -67,32 +68,32 @@ export default function HistoryPage() {
                 {history.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                            { label: 'Attempts', value: history.length, color: '#26215C' },
+                            { label: 'Attempts', value: history.length, color: '#0f172a' },
                             { label: 'Best score', value: `${bestScore}/100`, color: '#534AB7' },
                             { label: 'Avg accuracy', value: `${avgAccuracy}%`, color: '#1D9E75' },
-                            { label: 'Last attempt', value: formatDate(history[0].date), color: '#26215C' },
+                            { label: 'Last attempt', value: formatDate(history[0].date), color: '#0f172a' },
                         ].map(({ label, value, color }) => (
                             <div key={label}
-                                className="flex flex-col gap-1 px-5 py-4 rounded-2xl border border-gray-100 bg-white">
+                                className="flex flex-col gap-1 px-5 py-4 rounded-2xl border border-slate-200 bg-white">
                                 <span className="text-xl font-medium font-mono" style={{ color }}>{value}</span>
-                                <span className="text-xs text-gray-400">{label}</span>
+                                <span className="text-xs text-slate-400">{label}</span>
                             </div>
                         ))}
                     </div>
                 )}
 
                 {/* Attempt history */}
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                                 stroke="#534AB7" strokeWidth="1.8" strokeLinecap="round">
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                            <h2 className="text-sm font-medium text-gray-700">Attempt history</h2>
+                            <h2 className="text-sm font-semibold text-slate-700">Attempt history</h2>
                         </div>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-slate-400">
                             {history.length} attempt{history.length !== 1 ? 's' : ''}
                         </span>
                     </div>
@@ -108,8 +109,8 @@ export default function HistoryPage() {
                                 </svg>
                             </div>
                             <div className="flex flex-col items-center gap-1 text-center">
-                                <p className="text-sm font-medium text-gray-700">No attempts yet</p>
-                                <p className="text-xs text-gray-400 max-w-xs">
+                                <p className="text-sm font-semibold text-slate-700">No attempts yet</p>
+                                <p className="text-xs text-slate-400 max-w-xs">
                                     Your assessment history will appear here after you complete your first attempt.
                                 </p>
                             </div>
@@ -131,35 +132,35 @@ export default function HistoryPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid gap-x-6 px-6 py-3 border-b border-gray-50"
+                            <div className="grid gap-x-6 px-6 py-3 border-b border-slate-100"
                                 style={{ gridTemplateColumns: 'minmax(9rem,1fr) 5rem 5rem 5rem 8rem 10rem' }}>
                                 {['Date', 'Score', 'Accuracy', 'Time', 'Result', 'Actions'].map((h, i) => (
                                     <span key={h}
-                                        className={`text-xs font-medium text-gray-400 ${i === 5 ? 'text-right' : ''}`}>
+                                        className={`text-xs font-medium text-slate-400 ${i === 5 ? 'text-right' : ''}`}>
                                         {h}
                                     </span>
                                 ))}
                             </div>
-                            <div className="divide-y divide-gray-50">
+                            <div className="divide-y divide-slate-100">
                                 {history.map((attempt) => {
                                     const perf = performanceLabel(attempt.accuracy)
                                     return (
                                         <div key={attempt.sessionId}
-                                            className="grid gap-x-6 px-6 py-5 items-center hover:bg-gray-50 transition-colors"
+                                            className="grid gap-x-6 px-6 py-5 items-center hover:bg-slate-50 transition-colors"
                                             style={{ gridTemplateColumns: 'minmax(9rem,1fr) 5rem 5rem 5rem 8rem 10rem' }}>
                                             <div className="flex flex-col gap-0.5">
-                                                <span className="text-sm text-gray-700">{formatDate(attempt.date)}</span>
-                                                <span className="text-xs text-gray-400">
+                                                <span className="text-sm text-slate-700">{formatDate(attempt.date)}</span>
+                                                <span className="text-xs text-slate-400">
                                                     Attempt {attempt.attemptNumber}
                                                 </span>
                                             </div>
-                                            <span className="text-sm font-medium font-mono" style={{ color: '#26215C' }}>
+                                            <span className="text-sm font-medium font-mono" style={{ color: '#0f172a' }}>
                                                 {attempt.score}/{attempt.maxScore}
                                             </span>
                                             <span className="text-sm font-mono" style={{ color: '#534AB7' }}>
                                                 {attempt.accuracy}%
                                             </span>
-                                            <span className="text-sm font-mono text-gray-500">
+                                            <span className="text-sm font-mono text-slate-500">
                                                 {formatTime(attempt.totalTimeSeconds)}
                                             </span>
                                             <span className="text-xs font-medium px-2.5 py-1 rounded-md w-fit whitespace-nowrap"
@@ -169,7 +170,7 @@ export default function HistoryPage() {
                                             <div className="flex gap-2 justify-end">
                                                 <button
                                                     onClick={() => navigate(`/results/${attempt.sessionId}`)}
-                                                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200
+                                                    className="text-xs px-3 py-1.5 rounded-lg border border-slate-300
                                      text-gray-600 hover:border-gray-300 transition-colors">
                                                     Results
                                                 </button>
@@ -189,6 +190,7 @@ export default function HistoryPage() {
                 </div>
 
             </main>
+            <Footer />
         </div>
     )
 }

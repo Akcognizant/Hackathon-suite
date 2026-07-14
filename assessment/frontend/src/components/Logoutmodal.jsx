@@ -21,7 +21,7 @@ export default function LogoutModal({ onClose }) {
 
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-lg w-full max-w-sm p-6 flex flex-col gap-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-lg w-full max-w-sm p-6 flex flex-col gap-5">
 
                     {/* Icon + heading */}
                     <div className="flex flex-col gap-3">
@@ -37,8 +37,8 @@ export default function LogoutModal({ onClose }) {
                             </svg>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <h2 className="text-base font-medium text-gray-900">Sign out?</h2>
-                            <p className="text-sm text-gray-500 leading-relaxed">
+                            <h2 className="text-base font-semibold text-slate-900">Sign out?</h2>
+                            <p className="text-sm text-slate-500 leading-relaxed">
                                 Your session data will be cleared. Any unsaved assessment progress will be lost.
                             </p>
                         </div>
@@ -48,8 +48,8 @@ export default function LogoutModal({ onClose }) {
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-medium
-                         text-gray-600 bg-white transition-all hover:border-gray-300 hover:bg-gray-50"
+                            className="flex-1 h-10 rounded-xl border border-slate-300 text-sm font-medium
+                         text-slate-600 bg-white transition-all hover:border-slate-400 hover:bg-slate-50"
                         >
                             Cancel
                         </button>

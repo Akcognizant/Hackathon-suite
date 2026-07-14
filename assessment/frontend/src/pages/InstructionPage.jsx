@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { useState, useEffect } from 'react'
 import StartAssessmentModal from '../components/StartAssessmentModal'
 import { fetchHistory } from '../api'
@@ -74,7 +75,7 @@ export default function InstructionsPage() {
     const limitReached = attempts >= ATTEMPT_LIMIT
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f7f7f8' }}>
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f8fafc' }}>
             <Navbar />
 
             <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10 flex flex-col gap-8">
@@ -85,8 +86,8 @@ export default function InstructionsPage() {
                         style={{ color: '#1D9E75' }}>
                         Before you begin
                     </p>
-                    <h1 className="text-2xl font-medium text-gray-900">Assessment overview</h1>
-                    <p className="text-sm text-gray-500">
+                    <h1 className="text-2xl font-semibold text-slate-900">Assessment overview</h1>
+                    <p className="text-sm text-slate-500">
                         Read through the instructions carefully before starting.
                     </p>
                 </div>
@@ -95,11 +96,11 @@ export default function InstructionsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {STATS.map(({ value, label }) => (
                         <div key={label}
-                            className="flex flex-col gap-1 px-5 py-4 rounded-2xl border border-gray-100 bg-white">
-                            <span className="text-2xl font-medium font-mono" style={{ color: '#26215C' }}>
+                            className="flex flex-col gap-1 px-5 py-4 rounded-2xl border border-slate-200 bg-white">
+                            <span className="text-2xl font-semibold font-mono" style={{ color: '#0f172a' }}>
                                 {value}
                             </span>
-                            <span className="text-xs text-gray-400">{label}</span>
+                            <span className="text-xs text-slate-400">{label}</span>
                         </div>
                     ))}
                 </div>
@@ -108,7 +109,7 @@ export default function InstructionsPage() {
                 <div className="grid md:grid-cols-[1fr_300px] gap-6">
 
                     {/* Instructions */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-6">
                         <div className="flex items-center gap-2">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                 stroke="#534AB7" strokeWidth="1.8" strokeLinecap="round">
@@ -116,7 +117,7 @@ export default function InstructionsPage() {
                                 <line x1="12" y1="8" x2="12" y2="12" />
                                 <line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            <h2 className="text-sm font-medium text-gray-700">How it works</h2>
+                            <h2 className="text-sm font-semibold text-slate-700">How it works</h2>
                         </div>
                         <ol className="flex flex-col gap-5 list-none">
                             {INSTRUCTIONS.map(({ step, title, desc }) => (
@@ -126,8 +127,8 @@ export default function InstructionsPage() {
                                         {step}
                                     </span>
                                     <div className="flex flex-col gap-1">
-                                        <p className="text-sm font-medium text-gray-800">{title}</p>
-                                        <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
+                                        <p className="text-sm font-semibold text-slate-800">{title}</p>
+                                        <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
                                     </div>
                                 </li>
                             ))}
@@ -138,7 +139,7 @@ export default function InstructionsPage() {
                     <div className="flex flex-col gap-4">
 
                         {/* Scoring */}
-                        <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-4">
                             <div className="flex items-center gap-2">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                     stroke="#534AB7" strokeWidth="1.8" strokeLinecap="round">
@@ -146,12 +147,12 @@ export default function InstructionsPage() {
                                     <line x1="12" y1="20" x2="12" y2="4" />
                                     <line x1="6" y1="20" x2="6" y2="14" />
                                 </svg>
-                                <h2 className="text-sm font-medium text-gray-700">Scoring</h2>
+                                <h2 className="text-sm font-semibold text-slate-700">Scoring</h2>
                             </div>
                             <div className="flex flex-col gap-2">
                                 {SCORING.map(({ label, points, color, bg }) => (
                                     <div key={label} className="flex items-center justify-between">
-                                        <span className="text-xs text-gray-500">{label}</span>
+                                        <span className="text-xs text-slate-500">{label}</span>
                                         <span className="text-xs font-medium font-mono px-2 py-0.5 rounded-md"
                                             style={{ color, backgroundColor: bg }}>
                                             {points}
@@ -166,14 +167,14 @@ export default function InstructionsPage() {
 
                 {/* Begin CTA */}
                 <div className="flex items-center justify-between bg-white rounded-2xl
-                        border border-gray-100 px-6 py-5">
+                        border border-slate-200 px-6 py-5">
                     <div className="flex flex-col gap-0.5">
-                        <p className="text-sm font-medium text-gray-800">
+                        <p className="text-sm font-semibold text-slate-800">
                             {limitReached
                                 ? "You've reached the attempt limit"
                                 : 'Ready to test your pattern recognition?'}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-slate-400">
                             {limitReached
                                 ? `All ${ATTEMPT_LIMIT} attempts have been used.`
                                 : 'Your time starts as soon as you click begin.'}
@@ -182,7 +183,7 @@ export default function InstructionsPage() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                            className="text-sm text-slate-400 hover:text-gray-600 transition-colors">
                             Go back
                         </button>
                         <div className="relative group inline-flex">
@@ -219,6 +220,7 @@ export default function InstructionsPage() {
                 </div>
                 {showStart && <StartAssessmentModal onClose={() => setShowStart(false)} />}
             </main>
+            <Footer />
         </div>
     )
 }

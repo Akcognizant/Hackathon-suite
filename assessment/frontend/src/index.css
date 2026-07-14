@@ -13,6 +13,15 @@
   --color-teal-100: #9FE1CB;
   --color-teal-400: #1D9E75;
   --color-teal-600: #0F6E56;
+
+  /* Semantic brand aliases (PatternIQ purple accent) — prefer these in shared
+     components so the accent colour lives in one place. The slate scale used for
+     neutrals/chrome comes from Tailwind's defaults, matching the hackathon portal. */
+  --color-brand-50:  #EEEDFE;
+  --color-brand-100: #CECBF6;
+  --color-brand-600: #534AB7;
+  --color-brand-800: #3C3489;
+  --color-brand-900: #26215C;
 }
 
 html, body, #root {
