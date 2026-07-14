@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -72,6 +73,17 @@ public class GlobalExceptionHandler {
         // An unmatched route is a 404, not a 500 — don't let the catch-all below
         // mislabel "no handler for this path" as an internal server error.
         return build(HttpStatus.NOT_FOUND, "Not Found", "No endpoint for: " + ex.getResourcePath());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Object> handleResponseStatus(ResponseStatusException ex) {
+        // Services throw ResponseStatusException with an explicit status (e.g. 409/400/403).
+        // Preserve that status instead of letting the catch-all mislabel it as 500.
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return build(status, status.getReasonPhrase(), ex.getReason());
     }
 
     @ExceptionHandler(Exception.class)

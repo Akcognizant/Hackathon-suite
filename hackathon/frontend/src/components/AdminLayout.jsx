@@ -10,7 +10,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import axiosClient from '../api/axiosClient'
-import { logoutToAssessment } from '../api/authService'
+import { logoutToAdminLogin } from '../api/authService'
+import { accessRequestCount } from '../api/accessRequestApi'
 import { usePermissions } from '../hooks/usePermissions'
 import MessagesInbox from './MessagesInbox'
 
@@ -279,7 +280,7 @@ function AdminLayout() {
   const location = useLocation()
 
   // Role badge is driven by the logged-in user's role (JUDGE vs ADMIN).
-  const { isJudge } = usePermissions()
+  const { isJudge, isAdmin } = usePermissions()
   const roleBadge = isJudge
     ? { label: 'Judge', className: 'bg-emerald-100 text-emerald-800' }
     : { label: 'Admin', className: 'bg-indigo-100 text-indigo-800' }
@@ -320,9 +321,22 @@ function AdminLayout() {
   const pendingItems = useMemo(() => loadPendingItems(), [location.pathname])
 
   const handleLogout = () => {
-    // Clear the session and return to the assessment portal login (single front door).
-    logoutToAssessment()
+    // Admin/judge return to the hackathon login (their front door).
+    logoutToAdminLogin()
   }
+
+  // Pending access-request count for the nav badge (ADMIN only). Re-read on route
+  // changes so approving/rejecting on the requests page updates the badge.
+  const [pendingRequests, setPendingRequests] = useState(0)
+  useEffect(() => {
+    if (!isAdmin) return
+    accessRequestCount().then(setPendingRequests).catch(() => {})
+  }, [isAdmin, location.pathname])
+
+  // Admins additionally get the "Access Requests" nav entry (with a pending badge).
+  const navItems = isAdmin
+    ? [...NAV_ITEMS, { label: 'Access Requests', to: '/access-requests', end: false, Icon: MailIcon, badge: pendingRequests }]
+    : NAV_ITEMS
 
   const handleSendMessage = async () => {
     const text = chatInput.trim()
@@ -626,7 +640,7 @@ function AdminLayout() {
         } ${isSidebarOpen ? 'lg:w-64' : 'lg:w-20'}`}
       >
         <nav className="flex flex-1 flex-col gap-1 py-4">
-          {NAV_ITEMS.map(({ label, to, end, Icon }) => (
+          {navItems.map(({ label, to, end, Icon, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -643,7 +657,14 @@ function AdminLayout() {
                 }`
               }
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <span className="relative shrink-0">
+                <Icon className="h-5 w-5 shrink-0" />
+                {badge > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                    {badge}
+                  </span>
+                )}
+              </span>
               {/* Label hides only on the desktop icon-rail (collapsed >= lg). */}
               <span
                 className={`whitespace-nowrap ${isSidebarOpen ? '' : 'lg:hidden'}`}

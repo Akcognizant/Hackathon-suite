@@ -121,8 +121,14 @@ public class ParticipantPortalService {
             }
         }
 
-        // Each invited member must be free for this hackathon.
+        String myEmail = me.getEmail().toLowerCase();
         for (String memberEmail : memberEmails) {
+            // Added members (other than the creator) must be registered accounts.
+            if (!memberEmail.equals(myEmail) && adminUserRepository.findByEmail(memberEmail).isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "No such user exists: " + memberEmail);
+            }
+            // Each member must be free for this hackathon.
             if (myHackathonIds(memberEmail).contains(hackathon.getId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                         memberEmail + " is already in a team for this hackathon");

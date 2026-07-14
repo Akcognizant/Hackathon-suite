@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from './pages/LoginPage'
+import LoginRedirect from './pages/LoginRedirect'
+import SsoLanding from './pages/SsoLanding'
 import Dashboard from './pages/Dashboard'
 import HistoryPage from './pages/HistoryPage'
 import AssessmentPage from './pages/AssessmentPage'
@@ -16,7 +17,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        {/* Single login lives on the hackathon app — send /login there. */}
+        <Route path="/login" element={<LoginRedirect />} />
+        {/* Reverse-SSO landing for candidates authenticated on the single login page. */}
+        <Route path="/sso" element={<SsoLanding />} />
 
         <Route path="/register" element={<RegisterPage />} />
 
