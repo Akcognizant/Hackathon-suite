@@ -3,8 +3,13 @@
 // persists the session flag + email to localStorage and routes into the app.
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { login as loginRequest } from '../api/authService'
+import { useNavigate, Link } from 'react-router-dom'
+import {
+  login as loginRequest,
+  loginCandidate,
+  redirectToAssessment,
+  ASSESSMENT_URL,
+} from '../api/authService'
 import Button from './ui/Button'
 
 // Where each role lands after login.
@@ -20,7 +25,9 @@ function AdminLogin() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Calls the backend, stores the JWT (via authService) and routes by role.
+  // Single login for everyone. Try the hackathon account store first (admin/judge/
+  // participant); if there's no such account, fall back to the assessment (candidate)
+  // store and hand the candidate off to the exam portal via reverse SSO.
   const authenticate = async (address, secret) => {
     setError('')
     setLoading(true)
@@ -29,10 +36,20 @@ function AdminLogin() {
       navigate(homeForRole(role))
     } catch (err) {
       const status = err.response?.status
-      if (status === 401) {
-        setError('Invalid email or password. Please try again.')
-      } else if (status === 400) {
-        setError('Please enter a valid email address.')
+      // Not an admin/judge here (bad creds) OR the hackathon API is unreachable —
+      // either way, try the candidate (assessment) account store next.
+      if (status === 401 || status === 400 || !err.response) {
+        try {
+          const data = await loginCandidate(address, secret)
+          redirectToAssessment(data)
+          return
+        } catch (candidateErr) {
+          if (!candidateErr.response) {
+            setError('Unable to sign in right now. Please try again later.')
+          } else {
+            setError('Invalid email/username or password. Please try again.')
+          }
+        }
       } else {
         setError('Unable to sign in right now. Please try again later.')
       }
@@ -184,8 +201,17 @@ function AdminLogin() {
                 Sign in with Cognizant SSO
               </Button>
 
-              <p className="text-center text-xs text-slate-400">
-                Participants join by passing the assessment portal — no direct sign-up.
+              <p className="text-center text-sm text-slate-500">
+                New candidate?{' '}
+                <a href={`${ASSESSMENT_URL}/register`} className="font-semibold text-blue-600 transition-colors hover:text-blue-700">
+                  Create an account
+                </a>
+              </p>
+              <p className="text-center text-sm text-slate-500">
+                Need an evaluator account?{' '}
+                <Link to="/request-access" className="font-semibold text-blue-600 transition-colors hover:text-blue-700">
+                  Request admin or judge access
+                </Link>
               </p>
             </form>
           </div>

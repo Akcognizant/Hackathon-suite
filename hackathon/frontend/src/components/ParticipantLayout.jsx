@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { logoutToAssessment } from '../api/authService'
+import { logoutToLogin } from '../api/authService'
 
 const iconBase = 'h-5 w-5 shrink-0'
 
@@ -95,7 +95,7 @@ function ParticipantLayout() {
   }
 
   const handleLogout = () => {
-    logoutToAssessment()
+    logoutToLogin()
   }
 
   const go = (to) => {

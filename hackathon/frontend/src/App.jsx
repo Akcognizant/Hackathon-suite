@@ -11,6 +11,8 @@ import { currentRole, isAuthenticated } from './api/authService'
 // Admin console
 import AdminLayout from './components/AdminLayout'
 import AdminLogin from './components/AdminLogin'
+import RequestAccess from './pages/RequestAccess'
+import AccessRequests from './pages/AccessRequests'
 import SubmissionForm from './components/SubmissionForm'
 import AdminDashboard from './pages/AdminDashboard'
 import HackathonList from './pages/HackathonList'
@@ -57,6 +59,8 @@ function App() {
         <Routes>
           {/* Public */}
           <Route path="/login" element={<AdminLogin />} />
+          {/* Public: request an admin/judge account (pending admin approval) */}
+          <Route path="/request-access" element={<RequestAccess />} />
           {/* SSO handoff from the assessment portal (passed candidates only) */}
           <Route path="/sso" element={<SsoLanding />} />
           {/* Public secret-based team submission intake (kept from admin portal) */}
@@ -79,6 +83,8 @@ function App() {
             <Route path="/scores" element={<ScoreManagement />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/teams" element={<TeamsList />} />
+            {/* ADMIN-only inside the page (judges are redirected out) */}
+            <Route path="/access-requests" element={<AccessRequests />} />
           </Route>
 
           {/* Participant portal */}

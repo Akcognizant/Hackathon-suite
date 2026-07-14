@@ -44,6 +44,7 @@ function Teams() {
   const [events, setEvents] = useState([])
   const [joinable, setJoinable] = useState([])
   const [loading, setLoading] = useState(true)
+  const [joinFilter, setJoinFilter] = useState('') // event id to filter joinable teams
 
   // Create-team form
   const [name, setName] = useState('')
@@ -69,6 +70,15 @@ function Teams() {
   }, [])
 
   const openEvents = events.filter((e) => (e.status || '').toUpperCase() !== 'COMPLETED')
+
+  // Distinct events that actually have open teams (for the join filter dropdown).
+  const joinEventOptions = Array.from(
+    new Map(joinable.map((t) => [t.hackathonId, t.hackathonTitle])).entries(),
+  ).map(([id, title]) => ({ id, title }))
+
+  const filteredJoinable = joinFilter
+    ? joinable.filter((t) => String(t.hackathonId) === String(joinFilter))
+    : joinable
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -140,11 +150,12 @@ function Teams() {
         </div>
         <Input
           className="mt-4"
-          label="Invite members (comma-separated emails, optional)"
+          label="Add members (comma-separated emails, optional)"
           value={invites}
           onChange={(e) => setInvites(e.target.value)}
-          placeholder="alice@example.com, bob@example.com"
+          placeholder="alice@cognizant.com, bob@cognizant.com"
         />
+        <p className="mt-1 text-xs text-slate-400">Members must be registered users — unknown emails are rejected.</p>
         {formError && <p className="mt-3 text-sm font-medium text-red-600">{formError}</p>}
         <div className="mt-4">
           <Button type="submit" isLoading={submitting}>Create team</Button>
@@ -153,14 +164,30 @@ function Teams() {
 
       {/* Joinable teams */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Open teams to join</h2>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Open teams to join</h2>
+          {joinEventOptions.length > 0 && (
+            <select
+              value={joinFilter}
+              onChange={(e) => setJoinFilter(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:w-64"
+            >
+              <option value="">All events</option>
+              {joinEventOptions.map((e) => (
+                <option key={e.id} value={e.id}>{e.title}</option>
+              ))}
+            </select>
+          )}
+        </div>
         {loading ? (
           <p className="text-sm text-slate-400">Loading…</p>
         ) : joinable.length === 0 ? (
           <p className="text-sm text-slate-400">No open teams available for events you haven’t joined.</p>
+        ) : filteredJoinable.length === 0 ? (
+          <p className="text-sm text-slate-400">No open teams for the selected event.</p>
         ) : (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {joinable.map((t) => (
+            {filteredJoinable.map((t) => (
               <TeamCard
                 key={t.id}
                 team={t}
