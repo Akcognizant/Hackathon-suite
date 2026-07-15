@@ -61,7 +61,8 @@ const HelpIcon = (props) => (
 const NAV_ITEMS = [
   { label: 'Dashboard', to: '/portal', end: true, Icon: DashboardIcon },
   { label: 'Events', to: '/portal/events', end: false, Icon: TrophyIcon },
-  { label: 'Teams', to: '/portal/teams', end: false, Icon: UsersIcon },
+  { label: 'Join team', to: '/portal/teams', end: false, Icon: UsersIcon },
+  { label: 'My Teams', to: '/portal/my-teams', end: false, Icon: UsersIcon },
   { label: 'Submit Project', to: '/portal/submit', end: false, Icon: UploadIcon },
   { label: 'My Submissions', to: '/portal/submissions', end: false, Icon: FileIcon },
   { label: 'History', to: '/portal/history', end: false, Icon: HistoryIcon },
@@ -165,10 +166,6 @@ function ParticipantLayout() {
               </div>
             </div>
             <div className="flex flex-col p-2">
-              <button role="menuitem" onClick={() => go('/portal/my-teams')}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900">
-                <UsersIcon className="h-4 w-4 text-slate-400" /> My Teams
-              </button>
               <button role="menuitem" onClick={() => go('/portal/help')}
                 className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900">
                 <HelpIcon className="h-4 w-4 text-slate-400" /> Help

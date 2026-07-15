@@ -1,5 +1,6 @@
 package com.cognizant.hackathon.controller;
 
+import com.cognizant.hackathon.dto.AddTeamMemberRequest;
 import com.cognizant.hackathon.dto.CreateParticipantSubmissionRequest;
 import com.cognizant.hackathon.dto.CreateParticipantTeamRequest;
 import com.cognizant.hackathon.dto.ParticipantEventDto;
@@ -55,6 +56,12 @@ public class ParticipantPortalController {
     @PostMapping("/teams/{id}/join")
     public ParticipantTeamDto joinTeam(@PathVariable Long id) {
         return service.joinTeam(id);
+    }
+
+    @PostMapping("/teams/{id}/members")
+    public ParticipantTeamDto addMember(@PathVariable Long id,
+                                        @Valid @RequestBody AddTeamMemberRequest request) {
+        return service.addMember(id, request.email());
     }
 
     @GetMapping("/submissions/me")

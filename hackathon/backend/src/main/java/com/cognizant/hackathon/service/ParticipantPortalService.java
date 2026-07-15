@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -187,6 +188,49 @@ public class ParticipantPortalService {
         return toTeamDto(team);
     }
 
+    /** Add a registered user to a team the current participant belongs to. */
+    @Transactional
+    public ParticipantTeamDto addMember(Long teamId, String rawEmail) {
+        String me = currentEmail();
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found"));
+
+        List<Participant> roster = participantRepository.findByTeamId(team.getId());
+        boolean iAmMember = roster.stream().anyMatch(p -> me.equalsIgnoreCase(p.getEmail()));
+        if (!iAmMember) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only add members to a team you belong to");
+        }
+
+        String email = rawEmail == null ? "" : rawEmail.trim().toLowerCase();
+        if (email.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
+        }
+        if (adminUserRepository.findByEmail(email).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No such user exists: " + email);
+        }
+        if (roster.stream().anyMatch(p -> email.equalsIgnoreCase(p.getEmail()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, email + " is already on this team");
+        }
+        if (team.getHackathon() != null
+                && myHackathonIds(email).contains(team.getHackathon().getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    email + " is already in a team for this hackathon");
+        }
+        Integer max = team.getHackathon() != null ? team.getHackathon().getMaxTeamSize() : null;
+        if (max != null && roster.size() >= max) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This team is already full");
+        }
+
+        participantRepository.save(Participant.builder()
+                .name(displayName(email))
+                .email(email)
+                .team(team)
+                .build());
+
+        return toTeamDto(team);
+    }
+
     // ---- Submissions ----------------------------------------------------------
 
     @Transactional(readOnly = true)
@@ -212,6 +256,18 @@ public class ParticipantPortalService {
         if (!isMember) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You can only submit for a team you belong to");
+        }
+
+        // Submissions are only accepted within the hackathon's start–end window.
+        Hackathon hk = team.getHackathon();
+        LocalDate today = LocalDate.now();
+        if (hk != null && hk.getStartDate() != null && today.isBefore(hk.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Submissions for " + hk.getTitle() + " open on " + hk.getStartDate() + ".");
+        }
+        if (hk != null && hk.getEndDate() != null && today.isAfter(hk.getEndDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Submissions for " + hk.getTitle() + " closed on " + hk.getEndDate() + ".");
         }
 
         // Create-or-update: reuse the team's existing submission if there is one.
@@ -334,7 +390,9 @@ public class ParticipantPortalService {
     }
 
     private List<Participant> myRosterRows(String email) {
-        return participantRepository.findAllByEmail(email);
+        // Case-insensitive so both created and joined teams always reflect,
+        // regardless of how the account email was cased.
+        return participantRepository.findAllByEmailIgnoreCase(email);
     }
 
     private List<Team> myTeamEntities(String email) {
