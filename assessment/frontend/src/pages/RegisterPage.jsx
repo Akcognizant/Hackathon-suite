@@ -1,139 +1,169 @@
+// Candidate registration — restyled to match the hackathon admin portal's premium
+// split-screen layout (left: immersive branded panel, right: centered form). The
+// functionality is unchanged: same fields, validation, and registerCandidate flow.
+
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import AuthBrandPanel from '../components/AuthBrandPanel'
-import BrandMark from '../components/BrandMark'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
 import { registerCandidate } from '../api'
 import { useToast } from '../context/ToastContext'
 
-const UserIcon = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-    </svg>
-)
-const MailIcon = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-    </svg>
-)
-const LockIcon = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-)
+// Shared field styling — mirrors the hackathon AdminLogin inputs.
+const inputClasses =
+  'w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 export default function RegisterPage() {
-    const navigate = useNavigate()
-    const { login } = useAuth()
-    const toast = useToast()
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const toast = useToast()
 
-    const [form, setForm] = useState({ name: '', email: '', username: '', password: '', confirmPassword: '' })
-    const [errors, setErrors] = useState({})
-    const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', username: '', password: '', confirmPassword: '' })
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
-    const handleChange = (e) => {
-        const { name, value } = e.target
-        setForm(prev => ({ ...prev, [name]: value }))
-        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }))
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.name.trim()) e.name = 'Full name is required'
+    if (!form.email.trim()) e.email = 'Email is required'
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email'
+    if (!form.username.trim()) e.username = 'Username is required'
+    else if (form.username.length < 3) e.username = 'Username must be at least 3 characters'
+    if (!form.password) e.password = 'Password is required'
+    else if (form.password.length < 6) e.password = 'Password must be at least 6 characters'
+    if (!form.confirmPassword) e.confirmPassword = 'Please confirm your password'
+    else if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match'
+    return e
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const fieldErrors = validate()
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors)
+      return
     }
-
-    const validate = () => {
-        const e = {}
-        if (!form.name.trim()) e.name = 'Full name is required'
-        if (!form.email.trim()) e.email = 'Email is required'
-        else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Enter a valid email'
-        if (!form.username.trim()) e.username = 'Username is required'
-        else if (form.username.length < 3) e.username = 'Username must be at least 3 characters'
-        if (!form.password) e.password = 'Password is required'
-        else if (form.password.length < 6) e.password = 'Password must be at least 6 characters'
-        if (!form.confirmPassword) e.confirmPassword = 'Please confirm your password'
-        else if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match'
-        return e
+    setLoading(true)
+    try {
+      const { data } = await registerCandidate({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        username: form.username.trim(),
+        password: form.password,
+      })
+      login(data.candidate, data.token)
+      toast.success(`Welcome, ${data.candidate.name?.split(' ')[0] || 'there'}! Your account is ready.`)
+      navigate('/dashboard')
+    } catch (err) {
+      const status = err.response?.status
+      const msg = err.response?.data?.message
+      if (status === 409 && msg && /user\s?name/i.test(msg)) setErrors((prev) => ({ ...prev, username: msg }))
+      else if (status === 409 && msg && /e-?mail/i.test(msg)) setErrors((prev) => ({ ...prev, email: msg }))
+      else toast.error(msg || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        const fieldErrors = validate()
-        if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return }
-        setLoading(true)
-        try {
-            const { data } = await registerCandidate({
-                name: form.name.trim(), email: form.email.trim(),
-                username: form.username.trim(), password: form.password,
-            })
-            login(data.candidate, data.token)
-            toast.success(`Welcome, ${data.candidate.name?.split(' ')[0] || 'there'}! Your account is ready.`)
-            navigate('/dashboard')
-        } catch (err) {
-            const status = err.response?.status
-            const msg = err.response?.data?.message
-            if (status === 409 && msg && /user\s?name/i.test(msg)) setErrors(prev => ({ ...prev, username: msg }))
-            else if (status === 409 && msg && /e-?mail/i.test(msg)) setErrors(prev => ({ ...prev, email: msg }))
-            else toast.error(msg || 'Registration failed. Please try again.')
-        } finally {
-            setLoading(false)
-        }
-    }
+  const field = (name, label, { type = 'text', placeholder = '', autoComplete } = {}) => (
+    <div>
+      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-slate-700">
+        {label} <span className="text-red-500">*</span>
+      </label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={form[name]}
+        onChange={handleChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={inputClasses}
+      />
+      {errors[name] && <p className="mt-1.5 text-sm font-medium text-red-600">{errors[name]}</p>}
+    </div>
+  )
 
-    return (
-        <div className="flex min-h-screen">
-            <AuthBrandPanel />
+  return (
+    <div className="relative flex min-h-screen flex-col">
+      <div className="flex flex-1 flex-col lg:flex-row">
+        {/* ---------- Left: immersive branded panel ---------- */}
+        <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-800 lg:flex lg:w-1/2">
+          {/* Decorative geometric glow accents */}
+          <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl" />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
+              backgroundSize: '48px 48px',
+            }}
+          />
 
-            <main className="flex-1 flex items-center justify-center px-6 py-10 bg-white overflow-y-auto">
-                <div className="w-full max-w-sm flex flex-col gap-7">
-
-                    {/* Mobile brand */}
-                    <div className="md:hidden">
-                        <BrandMark />
-                    </div>
-
-                    {/* Header */}
-                    <div className="flex flex-col gap-1.5">
-                        <p className="text-xs font-semibold tracking-widest uppercase text-teal-400">
-                            Create account
-                        </p>
-                        <h2 className="text-2xl font-semibold text-slate-900">Get started</h2>
-                        <p className="text-sm text-slate-500">Create your account to begin the assessment</p>
-                    </div>
-
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
-                        <Input label="Full name" icon={UserIcon} name="name" type="text"
-                            placeholder="Enter your full name" autoComplete="name"
-                            value={form.name} onChange={handleChange} error={errors.name} />
-                        <Input label="Email" icon={MailIcon} name="email" type="email"
-                            placeholder="Enter your email" autoComplete="email"
-                            value={form.email} onChange={handleChange} error={errors.email} />
-                        <Input label="Username" icon={UserIcon} name="username" type="text"
-                            placeholder="Choose a username" autoComplete="username"
-                            value={form.username} onChange={handleChange} error={errors.username} />
-                        <Input label="Password" icon={LockIcon} name="password" type="password"
-                            placeholder="Create a password" autoComplete="new-password"
-                            value={form.password} onChange={handleChange} error={errors.password} />
-                        <Input label="Confirm password" icon={LockIcon} name="confirmPassword" type="password"
-                            placeholder="Confirm your password" autoComplete="new-password"
-                            value={form.confirmPassword} onChange={handleChange} error={errors.confirmPassword} />
-
-                        <Button type="submit" isLoading={loading} className="mt-1 w-full h-11">
-                            Create account
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                            </svg>
-                        </Button>
-                    </form>
-
-                    {/* Login link */}
-                    <p className="text-sm text-center text-slate-400">
-                        Already have an account?{' '}
-                        <Link to="/login" className="font-medium text-purple-600 hover:text-purple-800 transition-colors">
-                            Sign in
-                        </Link>
-                    </p>
-
-                </div>
-            </main>
+          <div className="relative z-10 flex flex-col justify-center px-16">
+            <span className="flex items-baseline text-4xl lowercase tracking-tight text-white">
+              <span className="font-light">cognizant</span>
+              <span className="ml-2 font-bold">assessment&trade;</span>
+            </span>
+            <p className="mt-6 max-w-md text-lg font-semibold uppercase leading-relaxed tracking-wide text-blue-100">
+              Powering Innovation. Securing the Future.
+            </p>
+          </div>
         </div>
-    )
+
+        {/* ---------- Right: registration form ---------- */}
+        <div className="flex w-full flex-col items-center justify-center overflow-y-auto bg-white px-6 py-12 lg:w-1/2">
+          <div className="w-full max-w-sm">
+            <img src="/cogni.png" alt="Cognizant" className="mx-auto mb-6 h-9 w-auto object-contain" />
+
+            <h1 className="text-center text-3xl font-bold text-indigo-950">Assessment Portal</h1>
+            <p className="mb-8 mt-2 text-center text-sm text-slate-500">
+              Create your account to begin the assessment.
+            </p>
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              {field('name', 'Full Name', { placeholder: 'Enter your full name', autoComplete: 'name' })}
+              {field('email', 'Email', { type: 'email', placeholder: 'you@cognizant.com', autoComplete: 'email' })}
+              {field('username', 'Username', { placeholder: 'Choose a username', autoComplete: 'username' })}
+              {field('password', 'Password', { type: 'password', placeholder: '••••••••', autoComplete: 'new-password' })}
+              {field('confirmPassword', 'Confirm Password', { type: 'password', placeholder: '••••••••', autoComplete: 'new-password' })}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                    Creating account…
+                  </>
+                ) : (
+                  'Create account'
+                )}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-slate-500">
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold text-blue-600 transition-colors hover:text-blue-700">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------- Footer ---------- */}
+      <p className="pointer-events-none absolute inset-x-0 bottom-4 text-center text-xs text-slate-400">
+        © 2026 Cognizant. Secure Assessment Portal.
+      </p>
+    </div>
+  )
 }
