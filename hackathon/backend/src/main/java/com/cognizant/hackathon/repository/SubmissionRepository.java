@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -20,6 +21,9 @@ public interface SubmissionRepository
 
     /** A team's submissions (used to source its repository link for scouting). */
     List<Submission> findByTeamId(Long teamId);
+
+    /** Submissions for a set of teams — batch lookup for the scouting directory page. */
+    List<Submission> findByTeamIdIn(Collection<Long> teamIds);
 
     /** Efficient COUNT(*) ... WHERE status = ? — no entities loaded. */
     long countByStatus(SubmissionStatus status);

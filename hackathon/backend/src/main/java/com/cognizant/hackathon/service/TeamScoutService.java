@@ -47,20 +47,38 @@ public class TeamScoutService {
                 .map(TeamScoutService::toMemberDto)
                 .toList();
 
+        List<Submission> submissions = submissionRepository.findByTeamId(teamId);
+
         // Repo link lives on the submission, not the team; first non-blank wins.
-        String repositoryUrl = submissionRepository.findByTeamId(teamId).stream()
+        String repositoryUrl = submissions.stream()
                 .map(Submission::getRepositoryUrl)
                 .filter(url -> url != null && !url.isBlank())
                 .findFirst()
                 .orElse(null);
 
+        // Show the PROJECT review status (submission's). A decided status wins over a
+        // still-PENDING one; fall back to the team's registration status if unsubmitted.
+        String reviewStatus = null;
+        for (Submission submission : submissions) {
+            if (submission.getStatus() == null) {
+                continue;
+            }
+            if (reviewStatus == null || "PENDING".equals(reviewStatus)) {
+                reviewStatus = submission.getStatus().name();
+            }
+        }
+        if (reviewStatus == null) {
+            reviewStatus = team.getStatus() != null ? team.getStatus().name() : null;
+        }
+
         return new TeamScoutDto(
                 team.getId(),
                 team.getName(),
                 team.getHackathon() != null ? team.getHackathon().getTitle() : null,
-                team.getStatus() != null ? team.getStatus().name() : null,
+                reviewStatus,
                 standings.rankOf(teamId),
                 standings.scoreOf(teamId),
+                standings.percentOf(teamId),
                 repositoryUrl,
                 members);
     }

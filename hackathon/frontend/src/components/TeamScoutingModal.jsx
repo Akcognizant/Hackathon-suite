@@ -235,8 +235,13 @@ function TeamScoutingModal({ open, teamId, teamName, onClose }) {
               <h2 className="text-xl font-bold text-indigo-950">{detail?.team || teamName}</h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 {detail?.hackathon || 'Scouting profile'}
-                {detail?.score != null && (
-                  <span className="ml-2 font-semibold text-slate-700">Score: {detail.score}</span>
+                {detail?.normalizedScore != null && (
+                  <span className="ml-2 font-semibold text-slate-700">
+                    Score: {detail.normalizedScore}%
+                    {detail?.score != null && (
+                      <span className="ml-1 font-normal text-slate-400">({detail.score} pts)</span>
+                    )}
+                  </span>
                 )}
               </p>
             </div>

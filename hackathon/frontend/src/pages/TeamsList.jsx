@@ -46,9 +46,16 @@ function TeamCard({ team, onScout }) {
       <h3 className="mt-4 text-lg font-bold text-indigo-950">{team.team}</h3>
       <p className="mt-0.5 truncate text-sm text-slate-500">{team.hackathon || 'No hackathon'}</p>
       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+        {/* Score shown as a normalized % (basis of the fair cross-hackathon rank),
+            with the raw points alongside for reference. */}
         <span className="text-sm text-slate-500">
           Score:{' '}
-          <span className="font-semibold text-slate-800">{team.score != null ? team.score : '—'}</span>
+          <span className="font-semibold text-slate-800">
+            {team.normalizedScore != null ? `${team.normalizedScore}%` : '—'}
+          </span>
+          {team.score != null && (
+            <span className="ml-1 text-xs text-slate-400">({team.score} pts)</span>
+          )}
         </span>
         <span className="text-xs font-semibold text-blue-600 transition-transform group-hover:translate-x-0.5">
           View Details →

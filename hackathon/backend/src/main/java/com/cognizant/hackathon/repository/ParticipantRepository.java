@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,4 +23,7 @@ public interface ParticipantRepository
 
     /** Members of a team (for the scouting profile). */
     List<Participant> findByTeamId(Long teamId);
+
+    /** Bulk-remove all members of the given teams (used by the cascading hackathon delete). */
+    void deleteByTeamIdIn(Collection<Long> teamIds);
 }

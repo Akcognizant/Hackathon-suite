@@ -13,9 +13,20 @@ import Button from '../components/ui/Button'
 import { useToast } from '../context/ToastContext'
 import { usePermissions, ADMIN_ONLY_TITLE } from '../hooks/usePermissions'
 
+// Today's date as a local YYYY-MM-DD string. Built from the local calendar (not
+// toISOString(), which is UTC and can be a day off in +/- timezones) so date-only
+// string comparisons like `startDate < today` line up with what the user sees.
+function todayLocalISO() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
 // Client-side validation mirrors the server rules (see Hackathon entity +
 // HackathonService) so users get instant feedback before the round-trip.
-function validateHackathon(form) {
+// `isEditing` relaxes the "no past start date" rule: an existing hackathon may
+// legitimately have started in the past, so we only forbid past starts on create.
+function validateHackathon(form, { isEditing = false, today = '' } = {}) {
   const errors = {}
   const title = form.title.trim()
   if (!title) {
@@ -23,10 +34,27 @@ function validateHackathon(form) {
   } else if (title.length > 200) {
     errors.title = 'Title must be 200 characters or fewer.'
   }
-  if (!form.startDate) errors.startDate = 'Start date is required.'
+  if (!form.startDate) {
+    errors.startDate = 'Start date is required.'
+  } else if (!isEditing && today && form.startDate < today) {
+    errors.startDate = 'Start date cannot be in the past.'
+  }
   if (!form.endDate) errors.endDate = 'End date is required.'
   if (form.startDate && form.endDate && form.endDate < form.startDate) {
     errors.endDate = 'End date must be on or after the start date.'
+  }
+
+  // Team-size bounds are optional (blank = no limit) but must be sensible when set.
+  const min = form.minTeamSize === '' ? null : Number(form.minTeamSize)
+  const max = form.maxTeamSize === '' ? null : Number(form.maxTeamSize)
+  if (min !== null && (!Number.isInteger(min) || min < 1)) {
+    errors.minTeamSize = 'Min team size must be a whole number of at least 1.'
+  }
+  if (max !== null && (!Number.isInteger(max) || max < 1)) {
+    errors.maxTeamSize = 'Max team size must be a whole number of at least 1.'
+  }
+  if (min !== null && max !== null && !errors.minTeamSize && !errors.maxTeamSize && max < min) {
+    errors.maxTeamSize = 'Max team size must be greater than or equal to the min.'
   }
   return errors
 }
@@ -177,6 +205,8 @@ function HackathonForm() {
     startDate: '',
     endDate: '',
     status: 'UPCOMING',
+    minTeamSize: '',
+    maxTeamSize: '',
   })
   const [errors, setErrors] = useState({}) // server-side field errors
   const [touched, setTouched] = useState({})
@@ -184,9 +214,12 @@ function HackathonForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Recomputed each render — cheap and keeps the min/validation in lockstep.
+  const today = todayLocalISO()
+
   // Live validation (recomputed each render) drives the disabled Submit button.
   // A field's error shows once it's been touched, or after a failed server submit.
-  const validationErrors = validateHackathon(form)
+  const validationErrors = validateHackathon(form, { isEditing, today })
   const isValid = Object.keys(validationErrors).length === 0
   const errorFor = (field) =>
     (touched[field] && validationErrors[field]) || errors[field] || ''
@@ -205,6 +238,8 @@ function HackathonForm() {
           startDate: data.startDate ?? '',
           endDate: data.endDate ?? '',
           status: data.status ?? 'UPCOMING',
+          minTeamSize: data.minTeamSize ?? '',
+          maxTeamSize: data.maxTeamSize ?? '',
         })
       } catch {
         // Unknown id or load failure — fall back to the list.
@@ -242,19 +277,32 @@ function HackathonForm() {
     // The Submit button is disabled while invalid, but guard anyway — reveal all
     // field errors if somehow submitted.
     if (!isValid) {
-      setTouched({ title: true, startDate: true, endDate: true })
+      setTouched({
+        title: true,
+        startDate: true,
+        endDate: true,
+        minTeamSize: true,
+        maxTeamSize: true,
+      })
       return
     }
 
     setErrors({})
     setSaving(true)
     setError('')
+    // Convert the team-size text inputs to numbers (or null when left blank so the
+    // limit is cleared server-side).
+    const payload = {
+      ...form,
+      minTeamSize: form.minTeamSize === '' ? null : Number(form.minTeamSize),
+      maxTeamSize: form.maxTeamSize === '' ? null : Number(form.maxTeamSize),
+    }
     try {
       if (isEditing) {
-        await updateHackathon(id, form)
+        await updateHackathon(id, payload)
         showToast('Hackathon updated successfully!', 'success')
       } else {
-        await createHackathon(form)
+        await createHackathon(payload)
         showToast('Hackathon created successfully!', 'success')
       }
       navigate('/hackathons')
@@ -324,6 +372,9 @@ function HackathonForm() {
             type="date"
             name="startDate"
             required
+            // Block past dates in the native picker on create. In edit mode we
+            // leave it open so an already-started event can still be adjusted.
+            min={isEditing ? undefined : today}
             value={form.startDate}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -334,12 +385,44 @@ function HackathonForm() {
             type="date"
             name="endDate"
             required
+            // End can't precede the start; fall back to today on create.
+            min={form.startDate || (isEditing ? undefined : today)}
             value={form.endDate}
             onChange={handleChange}
             onBlur={handleBlur}
             error={errorFor('endDate')}
           />
         </div>
+
+        {/* Team size — how many members a team may have for this event. Optional:
+            leave blank for no limit. */}
+        <div className="mb-1 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Input
+            label="Min Team Size"
+            type="number"
+            name="minTeamSize"
+            min={1}
+            value={form.minTeamSize}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="e.g. 2"
+            error={errorFor('minTeamSize')}
+          />
+          <Input
+            label="Max Team Size"
+            type="number"
+            name="maxTeamSize"
+            min={1}
+            value={form.maxTeamSize}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="e.g. 5"
+            error={errorFor('maxTeamSize')}
+          />
+        </div>
+        <p className="mb-8 text-xs text-slate-400">
+          How many members a team may have for this event. Leave blank for no limit.
+        </p>
 
         <div className="mb-8">
           <label

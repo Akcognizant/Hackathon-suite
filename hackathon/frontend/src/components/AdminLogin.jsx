@@ -107,7 +107,7 @@ function AdminLogin() {
               Hackathon Portal
             </h1>
             <p className="mb-8 mt-2 text-center text-sm text-slate-500">
-              Sign in — participants, judges, and admins.
+              Sign in — judges and admins.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">

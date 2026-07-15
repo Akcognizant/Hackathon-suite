@@ -70,6 +70,7 @@ function Teams() {
   }, [])
 
   const openEvents = events.filter((e) => (e.status || '').toUpperCase() !== 'COMPLETED')
+  const selectedEvent = events.find((e) => String(e.id) === String(hackathonId))
 
   // Distinct events that actually have open teams (for the join filter dropdown).
   const joinEventOptions = Array.from(
@@ -91,6 +92,18 @@ function Teams() {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
+    // Members on the team = you (the creator) + everyone you invite.
+    const totalMembers = 1 + members.length
+    const max = selectedEvent?.maxTeamSize
+    const min = selectedEvent?.minTeamSize
+    if (max != null && totalMembers > max) {
+      setFormError(`This event allows at most ${max} members per team (including you).`)
+      return
+    }
+    if (min != null && totalMembers < min) {
+      setFormError(`This event needs at least ${min} members per team (including you).`)
+      return
+    }
     setSubmitting(true)
     try {
       await createTeam({ name, description, hackathonId: Number(hackathonId), members })
@@ -156,6 +169,16 @@ function Teams() {
           placeholder="alice@cognizant.com, bob@cognizant.com"
         />
         <p className="mt-1 text-xs text-slate-400">Members must be registered users — unknown emails are rejected.</p>
+        {selectedEvent && (selectedEvent.minTeamSize != null || selectedEvent.maxTeamSize != null) && (
+          <p className="mt-2 text-xs text-slate-500">
+            Team size for {selectedEvent.title}:{' '}
+            <span className="font-medium text-slate-700">
+              {selectedEvent.minTeamSize ?? 1}–{selectedEvent.maxTeamSize ?? '∞'} members
+            </span>{' '}
+            (including you). You + {invites.split(',').map((s) => s.trim()).filter(Boolean).length} invited ={' '}
+            {1 + invites.split(',').map((s) => s.trim()).filter(Boolean).length}.
+          </p>
+        )}
         {formError && <p className="mt-3 text-sm font-medium text-red-600">{formError}</p>}
         <div className="mt-4">
           <Button type="submit" isLoading={submitting}>Create team</Button>
