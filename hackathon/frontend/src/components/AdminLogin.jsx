@@ -8,7 +8,6 @@ import {
   login as loginRequest,
   loginCandidate,
   redirectToAssessment,
-  ASSESSMENT_URL,
 } from '../api/authService'
 import Button from './ui/Button'
 
@@ -202,15 +201,9 @@ function AdminLogin() {
               </Button>
 
               <p className="text-center text-sm text-slate-500">
-                New candidate?{' '}
-                <a href={`${ASSESSMENT_URL}/register`} className="font-semibold text-blue-600 transition-colors hover:text-blue-700">
-                  Create an account
-                </a>
-              </p>
-              <p className="text-center text-sm text-slate-500">
-                Need an evaluator account?{' '}
+                Need an admin or judge account?{' '}
                 <Link to="/request-access" className="font-semibold text-blue-600 transition-colors hover:text-blue-700">
-                  Request admin or judge access
+                  Request access
                 </Link>
               </p>
             </form>

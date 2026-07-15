@@ -21,4 +21,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     /** Unread count for the notification badge (direct messages only — see service note). */
     long countByReceiverIdAndReadFalse(Long receiverId);
+
+    /** Clears a user's inbox: removes the direct messages addressed to them. */
+    void deleteByReceiverId(Long receiverId);
 }

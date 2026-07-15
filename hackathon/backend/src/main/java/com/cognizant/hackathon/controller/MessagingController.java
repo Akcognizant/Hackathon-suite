@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +49,13 @@ public class MessagingController {
     @GetMapping("/inbox")
     public List<MessageDto> inbox() {
         return messagingService.inbox();
+    }
+
+    @Operation(summary = "Clear the current user's inbox (deletes direct messages addressed to them)")
+    @DeleteMapping("/inbox")
+    public ResponseEntity<Void> clearInbox() {
+        messagingService.clearInbox();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Announcements only (for a participant-facing notifications view)")

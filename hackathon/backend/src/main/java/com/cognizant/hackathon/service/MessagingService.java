@@ -101,6 +101,17 @@ public class MessagingService {
         return messageRepository.countByReceiverIdAndReadFalse(currentUser().getId());
     }
 
+    /**
+     * Clears the current user's inbox by deleting the direct messages addressed to
+     * them. Broadcast announcements are shared, global notices (one row for everyone),
+     * so they are intentionally left in place — clearing must not remove them for
+     * other users.
+     */
+    @Transactional
+    public void clearInbox() {
+        messageRepository.deleteByReceiverId(currentUser().getId());
+    }
+
     /** Marks a message read — only the receiver may do so (else it's "not found"). */
     @Transactional
     public void markRead(Long id) {

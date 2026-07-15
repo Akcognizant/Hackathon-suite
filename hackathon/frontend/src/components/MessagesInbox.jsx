@@ -31,6 +31,7 @@ function MessagesInbox({ open = false }) {
   const [to, setTo] = useState('')
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   // Only admins may broadcast to all participants; judges send direct only.
   const canBroadcast = canAccess('ADMIN')
@@ -98,6 +99,25 @@ function MessagesInbox({ open = false }) {
     }
   }
 
+  // Clear inbox: deletes the user's direct messages. Announcements are global
+  // broadcasts (shared across users), so they intentionally remain.
+  const handleClear = async () => {
+    if (clearing) return
+    setClearing(true)
+    try {
+      await axiosClient.delete('/admin/messages/inbox')
+      setMessages((prev) => prev.filter((m) => m.messageType === 'ANNOUNCEMENT'))
+      showToast('Inbox cleared.', 'success')
+    } catch {
+      showToast('Failed to clear inbox.', 'error')
+    } finally {
+      setClearing(false)
+    }
+  }
+
+  // Only direct messages can be cleared (announcements are global).
+  const hasClearable = messages.some((m) => m.messageType !== 'ANNOUNCEMENT')
+
   if (!open) return null
 
   return (
@@ -159,7 +179,19 @@ function MessagesInbox({ open = false }) {
 
           {/* Inbox */}
           <div className="max-h-72 overflow-y-auto p-2">
-            <p className="px-1 pb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Inbox</p>
+            <div className="flex items-center justify-between px-1 pb-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Inbox</p>
+              {hasClearable && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  disabled={clearing}
+                  className="text-xs font-semibold text-red-600 transition-colors hover:text-red-700 disabled:opacity-50"
+                >
+                  {clearing ? 'Clearing…' : 'Clear inbox'}
+                </button>
+              )}
+            </div>
             {loading ? (
               <p className="px-1 py-6 text-center text-sm text-slate-400">Loading…</p>
             ) : messages.length === 0 ? (
