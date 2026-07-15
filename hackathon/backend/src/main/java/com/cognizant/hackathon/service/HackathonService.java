@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +103,8 @@ public class HackathonService {
         validateStartNotInPast(hackathon.getStartDate());
         validateDateRange(hackathon.getStartDate(), hackathon.getEndDate());
         validateTeamSize(hackathon.getMinTeamSize(), hackathon.getMaxTeamSize());
+        // Status is derived from the dates, never taken from the client.
+        hackathon.setStatus(computeStatus(hackathon.getStartDate(), hackathon.getEndDate()));
         Hackathon saved = hackathonRepository.save(hackathon);
         eventPublisher.publishEvent(new HackathonCreatedEvent(saved.getId(), saved.getTitle()));
         return saved;
@@ -117,7 +120,8 @@ public class HackathonService {
         existing.setDescription(updatedData.getDescription());
         existing.setStartDate(updatedData.getStartDate());
         existing.setEndDate(updatedData.getEndDate());
-        existing.setStatus(updatedData.getStatus());
+        // Status is recomputed from the (possibly changed) dates, not taken from the client.
+        existing.setStatus(computeStatus(updatedData.getStartDate(), updatedData.getEndDate()));
         // Team-size bounds are always mirrored (null clears the limit) so an edit can
         // both set and remove them.
         existing.setMinTeamSize(updatedData.getMinTeamSize());
@@ -131,6 +135,42 @@ public class HackathonService {
         Hackathon saved = hackathonRepository.save(existing);
         eventPublisher.publishEvent(new HackathonUpdatedEvent(saved.getId(), saved.getTitle()));
         return saved;
+    }
+
+    /**
+     * Derives an event's lifecycle status purely from its dates:
+     * before the start date it's UPCOMING, on/between start and end it's ACTIVE, and
+     * after the end date it's COMPLETED. This is the single source of truth for status —
+     * admins no longer set it by hand.
+     */
+    private String computeStatus(LocalDate startDate, LocalDate endDate) {
+        LocalDate today = LocalDate.now();
+        if (startDate != null && today.isBefore(startDate)) {
+            return "UPCOMING";
+        }
+        if (endDate != null && today.isAfter(endDate)) {
+            return "COMPLETED";
+        }
+        return "ACTIVE";
+    }
+
+    /**
+     * Keeps stored statuses in step with the calendar so an event flips
+     * UPCOMING → ACTIVE → COMPLETED on its own as the dates pass — no edit needed.
+     * Runs shortly after startup and then hourly (status only changes at day
+     * boundaries, so hourly is ample). Only rows whose status actually changed are
+     * saved, and no activity events are emitted (this isn't a user action).
+     */
+    @Scheduled(initialDelay = 10_000, fixedDelay = 3_600_000)
+    @Transactional
+    public void refreshStatuses() {
+        for (Hackathon hackathon : hackathonRepository.findAll()) {
+            String current = computeStatus(hackathon.getStartDate(), hackathon.getEndDate());
+            if (!current.equals(hackathon.getStatus())) {
+                hackathon.setStatus(current);
+                hackathonRepository.save(hackathon);
+            }
+        }
     }
 
     /** Cross-field rule the @NotNull annotations can't express: end must not precede start. */
