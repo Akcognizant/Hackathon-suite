@@ -1,9 +1,13 @@
 package com.cognizant.hackathon.dto;
 
+import java.time.LocalDate;
+
 /** A completed hackathon in the participant's history, with participation outcome. */
 public record ParticipantHistoryDto(
         Long hackathonId,
         String hackathonTitle,
+        LocalDate startDate,
+        LocalDate endDate,
         String status,
         /** Whether the current participant took part (was on a team) in this hackathon. */
         boolean participated,

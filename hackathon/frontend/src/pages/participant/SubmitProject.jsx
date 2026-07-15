@@ -29,10 +29,21 @@ function SubmitProject() {
     setRepositoryUrl(existing?.repositoryUrl || '')
   }
 
+  // A hackathon is "over" once it's marked COMPLETED or its end date has passed.
+  // Teams for such events drop out of the picker — you can't submit anymore.
+  const isOver = (team) => {
+    if ((team.hackathonStatus || '').toUpperCase() === 'COMPLETED') return true
+    if (team.hackathonEndDate) {
+      const today = new Date().toISOString().slice(0, 10)
+      return team.hackathonEndDate < today
+    }
+    return false
+  }
+
   useEffect(() => {
     Promise.all([getMyTeams(), getMySubmissions()])
       .then(([t, s]) => {
-        setTeams(t)
+        setTeams(t.filter((team) => !isOver(team)))
         setSubmissions(s)
         // If we arrived via an "Edit" link, preselect that team and prefill.
         const preselect = location.state?.teamId
@@ -126,9 +137,9 @@ function SubmitProject() {
               })}
             </select>
           </div>
-          <Input label="Project title" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} required placeholder="CostGuard — AI Cloud Spend Optimizer" />
+          <Input label="Project title" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} required />
           <Input label="Description" type="textarea" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="What does your project do? Key features, tech used, and what problem it solves." />
-          <Input label="Repository URL" type="url" value={repositoryUrl} onChange={(e) => setRepositoryUrl(e.target.value)} required placeholder="https://github.com/your-team/project" />
+          <Input label="Repository URL" type="url" value={repositoryUrl} onChange={(e) => setRepositoryUrl(e.target.value)} required />
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
           <Button type="submit" isLoading={submitting}>{isEditing ? 'Update submission' : 'Submit project'}</Button>
         </form>

@@ -39,6 +39,10 @@ export async function addTeamMember(teamId, email) {
   return data
 }
 
+export async function leaveTeam(teamId) {
+  await axiosClient.delete(`/participant/teams/${teamId}/leave`)
+}
+
 export async function getMySubmissions() {
   const { data } = await axiosClient.get('/participant/submissions/me')
   return data
