@@ -59,9 +59,11 @@ public class DataInitializer implements CommandLineRunner {
         // Combined with the idempotency guards below, a restart never floods the feed.
        
      
-        // Demo/domain seeding is DISABLED — the portal starts empty and admins create
-        // real hackathons. (seedDomainData/seedCriteria/ensureSubmissionSecrets are
-        // kept below for reference; re-enable if you want the sample data back.)
+        // Demo/domain seeding is DISABLED — admins create their own real hackathons,
+        // and re-adding the sample AI/FinTech/Cloud events on every startup was just
+        // clutter that reappeared after being deleted. The seedDomainData()/
+        // seedCriteria()/ensureSubmissionSecrets() helpers are kept below for reference;
+        // re-enable those calls only if you want the demo data back.
 
         // Only bootstrap the admin/judge login accounts if the accounts table is empty
         // (so a brand-new DB is still usable). Existing accounts are left untouched.
@@ -87,35 +89,32 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedDomainData() {
-        Hackathon aiSprint = hackathonRepository.save(new Hackathon(
-                null,
+        Hackathon aiSprint = ensureHackathon(
                 "AI Innovation Sprint",
                 "AI/ML for cloud cost optimization & ops tooling",
                 LocalDate.now().plusDays(1),
                 LocalDate.now().plusDays(3),
                 "ACTIVE",
                 SECRET_AI,
-                2, 5));
+                2, 5);
 
-        Hackathon finTech = hackathonRepository.save(new Hackathon(
-                null,
+        Hackathon finTech = ensureHackathon(
                 "FinTech Build Weekend",
                 "Payment & fraud-detection prototyping",
                 LocalDate.now().plusDays(7),
                 LocalDate.now().plusDays(9),
                 "UPCOMING",
                 SECRET_FINTECH,
-                2, 4));
+                2, 4);
 
-        Hackathon cloudNative = hackathonRepository.save(new Hackathon(
-                null,
+        Hackathon cloudNative = ensureHackathon(
                 "Cloud Native Challenge",
                 "Legacy to Kubernetes-native microservices migration task.",
                 LocalDate.now().minusDays(5),
                 LocalDate.now().minusDays(2),
                 "COMPLETED",
                 SECRET_CLOUD,
-                2, 4));
+                2, 4);
 
         // Evaluation criteria are seeded separately by seedCriteria() so they're
         // also backfilled onto an already-populated database.
@@ -138,6 +137,20 @@ public class DataInitializer implements CommandLineRunner {
 
         ensureTeam("Legacy Breakers", cloudNative, "Monolith2Micro — Automated Refactoring", SubmissionStatus.APPROVED,
                 "Ravi Kumar", ParticipantRole.BACKEND, "Neha Gupta", ParticipantRole.FRONTEND);
+    }
+
+    /**
+     * Returns the hackathon with this title if it already exists, otherwise creates
+     * it. Keyed by title so re-running the seeder never produces duplicate demo
+     * events and never overwrites an admin-created hackathon of the same name.
+     */
+    private Hackathon ensureHackathon(String title, String description, LocalDate startDate,
+                                      LocalDate endDate, String status, String secret,
+                                      Integer minTeamSize, Integer maxTeamSize) {
+        return hackathonRepository.findFirstByTitle(title)
+                .orElseGet(() -> hackathonRepository.save(new Hackathon(
+                        null, title, description, startDate, endDate, status, secret,
+                        minTeamSize, maxTeamSize)));
     }
 
     private void seedRubric(Hackathon hackathon, Object... nameMaxPairs) {
