@@ -33,6 +33,7 @@ import PMyTeams from './pages/participant/MyTeams'
 import PSubmit from './pages/participant/SubmitProject'
 import PSubmissions from './pages/participant/Submissions'
 import PHistory from './pages/participant/History'
+import PLeaderboard from './pages/participant/Leaderboard'
 import PHelp from './pages/participant/Help'
 
 const ADMIN_ROLES = ['ADMIN', 'JUDGE']
@@ -101,6 +102,7 @@ function App() {
             <Route path="/portal/my-teams" element={<PMyTeams />} />
             <Route path="/portal/submit" element={<PSubmit />} />
             <Route path="/portal/submissions" element={<PSubmissions />} />
+            <Route path="/portal/leaderboard" element={<PLeaderboard />} />
             <Route path="/portal/history" element={<PHistory />} />
             <Route path="/portal/help" element={<PHelp />} />
           </Route>

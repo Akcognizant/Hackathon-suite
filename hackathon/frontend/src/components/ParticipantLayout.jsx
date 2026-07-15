@@ -47,6 +47,11 @@ const HistoryIcon = (props) => (
     <path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" />
   </svg>
 )
+const RankingIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M3 20h18" /><rect x="5" y="12" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="12" rx="1" /><rect x="15" y="14" width="4" height="5" rx="1" />
+  </svg>
+)
 const LogoutIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -65,6 +70,7 @@ const NAV_ITEMS = [
   { label: 'My Teams', to: '/portal/my-teams', end: false, Icon: UsersIcon },
   { label: 'Submit Project', to: '/portal/submit', end: false, Icon: UploadIcon },
   { label: 'My Submissions', to: '/portal/submissions', end: false, Icon: FileIcon },
+  { label: 'Leaderboard', to: '/portal/leaderboard', end: false, Icon: RankingIcon },
   { label: 'History', to: '/portal/history', end: false, Icon: HistoryIcon },
 ]
 
