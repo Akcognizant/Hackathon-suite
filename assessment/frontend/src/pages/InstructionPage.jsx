@@ -12,7 +12,7 @@ const INSTRUCTIONS = [
     {
         step: '01',
         title: 'Two sections, one sitting',
-        desc: 'Section 1 has pattern questions (sequences, shapes, matrices). Section 2 has interactive drag-and-drop activities. You move through all 15 items in one attempt.',
+        desc: 'Section 1 has pattern questions (sequences, shapes, matrices). Section 2 has interactive drag-and-drop activities. You move through all 20 items in one attempt.',
     },
     {
         step: '02',
@@ -44,7 +44,7 @@ const SCORING = [
 
 const STATS = [
     { value: '2', label: 'Sections' },
-    { value: '15', label: 'Questions' },
+    { value: '20', label: 'Questions' },
     { value: '20m', label: 'Duration' },
     { value: '3', label: 'Attempts' },
 ]

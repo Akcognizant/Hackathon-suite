@@ -23,7 +23,7 @@ public class SessionService {
     private final QuestionRepository questionRepository;
 
     private static final int MAX_ATTEMPTS = 3;
-    // Fixed 20-minute limit for the whole 2-section attempt (10 MCQ + 5 activities).
+    // Fixed 20-minute limit for the whole 2-section attempt (10 MCQ + 10 activities).
     private static final int TIME_LIMIT_SECONDS = 20 * 60;
     // Minimum accuracy (%) to pass and unlock the hackathon portal.
     private static final double PASS_THRESHOLD = 75.0;
@@ -70,10 +70,11 @@ public class SessionService {
         session.setStartedAt(LocalDateTime.now());
         sessionRepository.save(session);
 
-        // Pin the attempt: section 1 = 10 random MCQs, section 2 = the fixed drag activities.
+        // Pin the attempt: section 1 = 10 random MCQs, section 2 = 10 random drag
+        // activities (balanced 2 per type) drawn from the seeded pool.
         int order = 0;
-        for (Question q : pickPatternQuestions(candidateId)) pinResponse(session, q, order++);
-        for (Question q : questionRepository.findActivities())  pinResponse(session, q, order++);
+        for (Question q : pickPatternQuestions(candidateId))      pinResponse(session, q, order++);
+        for (Question q : questionRepository.findBalancedActivities()) pinResponse(session, q, order++);
 
         return buildStartResponse(session, false, TIME_LIMIT_SECONDS);
     }

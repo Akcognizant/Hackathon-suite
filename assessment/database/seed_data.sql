@@ -107,42 +107,9 @@ VALUES
 ('Two rules combine in this matrix — find the missing value.',
  'matrix', '{"grid": [[2, 3, 4], [4, 9, 16], [6, 27, "?"]]}', '["32", "36", "48", "64"]', 1);
 
--- ── Section 2: fixed drag-and-drop activities (one per type). ──
--- items/zones are shown to the candidate; answer_key is server-only.
--- created_at increments so findActivities() returns them in a stable order.
-INSERT INTO questions (section, question_text, question_type, prompt, items, zones, answer_key, suffix, created_at)
-VALUES
-('drag', 'Sort each item into its group', 'categorize',
- 'Drag each item into the group it belongs to.',
- '[{"id":"apple","label":"Apple"},{"id":"banana","label":"Banana"},{"id":"dog","label":"Dog"},{"id":"cat","label":"Cat"},{"id":"red","label":"Red"},{"id":"blue","label":"Blue"}]',
- '[{"id":"fruit","label":"Fruit"},{"id":"animal","label":"Animal"},{"id":"color","label":"Color"}]',
- '{"apple":"fruit","banana":"fruit","dog":"animal","cat":"animal","red":"color","blue":"color"}',
- NULL, NOW() + INTERVAL '1 second'),
-
-('drag', 'Match each word to its opposite', 'match',
- 'Drag each word on the left onto its opposite on the right.',
- '[{"id":"day","label":"Day"},{"id":"hot","label":"Hot"},{"id":"up","label":"Up"},{"id":"big","label":"Big"}]',
- '[{"id":"night","label":"Night"},{"id":"cold","label":"Cold"},{"id":"down","label":"Down"},{"id":"small","label":"Small"}]',
- '{"day":"night","hot":"cold","up":"down","big":"small"}',
- NULL, NOW() + INTERVAL '2 second'),
-
-('drag', 'Put the numbers in order', 'sequence',
- 'Arrange the numbers from smallest to largest.',
- '[{"id":"one","label":"One"},{"id":"two","label":"Two"},{"id":"three","label":"Three"},{"id":"four","label":"Four"},{"id":"five","label":"Five"}]',
- '[]',
- '["one","two","three","four","five"]',
- NULL, NOW() + INTERVAL '3 second'),
-
-('drag', 'Rank by size', 'rank',
- 'Arrange the animals from largest to smallest.',
- '[{"id":"elephant","label":"Elephant"},{"id":"horse","label":"Horse"},{"id":"dog","label":"Dog"},{"id":"ant","label":"Ant"}]',
- '[]',
- '["elephant","horse","dog","ant"]',
- NULL, NOW() + INTERVAL '4 second'),
-
-('drag', 'Complete the sentence', 'fill-blank',
- 'Drag the correct word into each blank. Some words are not used.',
- '[{"id":"cat","label":"cat"},{"id":"mouse","label":"mouse"},{"id":"tree","label":"tree"},{"id":"dog","label":"dog"},{"id":"wall","label":"wall"}]',
- '[{"id":"b1","label":"The "},{"id":"b2","label":" chased the "},{"id":"b3","label":" up the "}]',
- '{"cat":"b1","mouse":"b2","tree":"b3"}',
- '.', NOW() + INTERVAL '5 second');
+-- ── Section 2: drag-and-drop activities ──
+-- The drag pool (100 core-CS activities, balanced across the five types) is seeded
+-- programmatically on backend startup by QuestionSeeder, from the classpath resource
+-- backend/src/main/resources/drag_questions_pool.json. Each attempt draws 10 at
+-- random (2 per type) via QuestionRepository.findBalancedActivities().
+-- Nothing to insert here.
