@@ -34,6 +34,11 @@ export async function joinTeam(teamId) {
   return data
 }
 
+export async function addTeamMember(teamId, email) {
+  const { data } = await axiosClient.post(`/participant/teams/${teamId}/members`, { email })
+  return data
+}
+
 export async function getMySubmissions() {
   const { data } = await axiosClient.get('/participant/submissions/me')
   return data

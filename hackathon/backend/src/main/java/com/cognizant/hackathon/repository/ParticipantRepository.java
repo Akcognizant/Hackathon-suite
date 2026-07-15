@@ -20,6 +20,9 @@ public interface ParticipantRepository
      */
     List<Participant> findAllByEmail(String email);
 
+    /** Case-insensitive variant so "my teams" resolves regardless of email casing. */
+    List<Participant> findAllByEmailIgnoreCase(String email);
+
     /** Members of a team (for the scouting profile). */
     List<Participant> findByTeamId(Long teamId);
 }

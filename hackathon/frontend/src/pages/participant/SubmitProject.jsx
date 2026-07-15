@@ -52,8 +52,10 @@ function SubmitProject() {
     applyExisting(submissions, id)
   }
 
+  // Teams that already submitted for their hackathon — disabled in the picker.
+  const submittedTeamIds = new Set(submissions.map((s) => String(s.teamId)))
   // True when the selected team already has a submission (so this is an edit).
-  const isEditing = submissions.some((s) => String(s.teamId) === String(teamId))
+  const isEditing = submittedTeamIds.has(String(teamId))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -110,16 +112,20 @@ function SubmitProject() {
               className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             >
               <option value="">Select a team…</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} — {t.hackathonTitle}</option>
-              ))}
+              {teams.map((t) => {
+                const submitted = submittedTeamIds.has(String(t.id))
+                return (
+                  <option
+                    key={t.id}
+                    value={t.id}
+                    disabled={submitted && String(t.id) !== String(teamId)}
+                  >
+                    {t.name} — {t.hackathonTitle}{submitted ? ' (already submitted)' : ''}
+                  </option>
+                )
+              })}
             </select>
           </div>
-          {isEditing && (
-            <p className="rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
-              This team already has a submission — the form is prefilled so you can edit it. Saving updates the existing entry.
-            </p>
-          )}
           <Input label="Project title" value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} required placeholder="CostGuard — AI Cloud Spend Optimizer" />
           <Input label="Description" type="textarea" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="What does your project do? Key features, tech used, and what problem it solves." />
           <Input label="Repository URL" type="url" value={repositoryUrl} onChange={(e) => setRepositoryUrl(e.target.value)} required placeholder="https://github.com/your-team/project" />

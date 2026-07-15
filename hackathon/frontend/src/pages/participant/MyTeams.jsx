@@ -1,17 +1,49 @@
-// My Teams — the teams the signed-in participant belongs to. Reached from the
-// profile menu (moved out of the Teams page, which now only creates/joins).
+// My Teams — the teams the signed-in participant belongs to, with the ability to
+// add another registered user to a team.
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getMyTeams } from '../../api/participantApi'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import { useToast } from '../../context/ToastContext'
+import { getMyTeams, getMySubmissions, addTeamMember } from '../../api/participantApi'
 
-function TeamCard({ team }) {
+// The tag reflects the admin's review of the team's submission when there is one
+// (APPROVED/REJECTED/PENDING); otherwise it falls back to the team's own status.
+const STATUS_TONE = {
+  APPROVED: 'bg-emerald-100 text-emerald-800',
+  REJECTED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-amber-100 text-amber-800',
+}
+
+function TeamCard({ team, status, onChanged }) {
+  const toast = useToast()
+  const [email, setEmail] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const add = async (e) => {
+    e.preventDefault()
+    const value = email.trim()
+    if (!value) return
+    setBusy(true)
+    try {
+      await addTeamMember(team.id, value)
+      toast?.showToast('Member added!')
+      setEmail('')
+      onChanged?.()
+    } catch (err) {
+      toast?.showToast(err.response?.data?.message || 'Could not add member.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="mb-1 flex items-start justify-between gap-2">
         <h3 className="font-semibold text-slate-900">{team.name}</h3>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-          {team.status}
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[status] || 'bg-slate-100 text-slate-600'}`}>
+          {status}
         </span>
       </div>
       <p className="mb-3 text-xs text-slate-500">{team.hackathonTitle}</p>
@@ -25,27 +57,49 @@ function TeamCard({ team }) {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400">{team.memberCount} member{team.memberCount === 1 ? '' : 's'}</p>
+      <p className="mb-3 text-xs text-slate-400">{team.memberCount} member{team.memberCount === 1 ? '' : 's'}</p>
+
+      {/* Add a registered member */}
+      <form onSubmit={add} className="flex items-end gap-2 border-t border-slate-100 pt-3">
+        <Input
+          className="flex-1"
+          label="Add a member"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <Button type="submit" size="sm" isLoading={busy}>Add</Button>
+      </form>
     </div>
   )
 }
 
 function MyTeams() {
   const [teams, setTeams] = useState([])
+  const [subByTeam, setSubByTeam] = useState({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    getMyTeams()
-      .then(setTeams)
+  const load = () => {
+    setLoading(true)
+    Promise.all([getMyTeams(), getMySubmissions()])
+      .then(([t, subs]) => {
+        setTeams(t)
+        const map = {}
+        for (const s of subs) map[String(s.teamId)] = s.status
+        setSubByTeam(map)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    load()
   }, [])
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">My teams</h1>
-        <p className="mt-1 text-sm text-slate-500">Teams you’ve created or joined across hackathons.</p>
+        <p className="mt-1 text-sm text-slate-500">Teams you’ve created or joined — add registered members here.</p>
       </div>
 
       {loading ? (
@@ -60,7 +114,14 @@ function MyTeams() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {teams.map((t) => <TeamCard key={t.id} team={t} />)}
+          {teams.map((t) => (
+            <TeamCard
+              key={t.id}
+              team={t}
+              status={subByTeam[String(t.id)] || t.status}
+              onChanged={load}
+            />
+          ))}
         </div>
       )}
     </div>

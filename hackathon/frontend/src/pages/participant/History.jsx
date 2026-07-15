@@ -21,6 +21,7 @@ const SUB_STATUS_STYLES = {
 function History() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     getHistory()
@@ -29,11 +30,31 @@ function History() {
       .finally(() => setLoading(false))
   }, [])
 
+  const q = search.trim().toLowerCase()
+  const filtered = q
+    ? rows.filter((r) =>
+        [r.hackathonTitle, r.teamName, r.projectTitle]
+          .filter(Boolean)
+          .some((v) => v.toLowerCase().includes(q)),
+      )
+    : rows
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">History</h1>
-        <p className="mt-1 text-sm text-slate-500">All completed hackathons and where you stood.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">History</h1>
+          <p className="mt-1 text-sm text-slate-500">All completed hackathons and where you stood.</p>
+        </div>
+        {rows.length > 0 && (
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search hackathons…"
+            className="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:w-64"
+          />
+        )}
       </div>
 
       {loading ? (
@@ -42,9 +63,13 @@ function History() {
         <div className="rounded-2xl border border-gray-100 bg-white p-6 text-sm text-slate-500 shadow-sm">
           No completed hackathons yet.
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          No hackathons match your search.
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {rows.map((r, i) => (
+          {filtered.map((r, i) => (
             <div key={`${r.hackathonId}-${i}`} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="mb-2 flex items-start justify-between gap-2">
                 <h3 className="text-lg font-semibold text-slate-900">{r.hackathonTitle}</h3>

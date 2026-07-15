@@ -38,6 +38,45 @@ function TeamCard({ team, action }) {
   )
 }
 
+// Join button that turns into an inline "Are you sure?" confirm in place.
+function JoinButton({ team, onJoin }) {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  if (!confirming) {
+    return (
+      <Button size="sm" className="mt-3 w-full" onClick={() => setConfirming(true)}>
+        Join team
+      </Button>
+    )
+  }
+
+  return (
+    <div className="mt-3">
+      <p className="mb-2 text-center text-xs font-medium text-slate-600">
+        Join “{team.name}”?
+      </p>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="flex-1"
+          isLoading={busy}
+          onClick={async () => {
+            setBusy(true)
+            await onJoin(team)
+            setBusy(false)
+          }}
+        >
+          Yes, join
+        </Button>
+        <Button size="sm" variant="secondary" className="flex-1" disabled={busy} onClick={() => setConfirming(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function Teams() {
   const location = useLocation()
   const toast = useToast()
@@ -71,10 +110,8 @@ function Teams() {
 
   const openEvents = events.filter((e) => (e.status || '').toUpperCase() !== 'COMPLETED')
 
-  // Distinct events that actually have open teams (for the join filter dropdown).
-  const joinEventOptions = Array.from(
-    new Map(joinable.map((t) => [t.hackathonId, t.hackathonTitle])).entries(),
-  ).map(([id, title]) => ({ id, title }))
+  // Filter dropdown lists all active/upcoming hackathons (not just ones with open teams).
+  const joinEventOptions = openEvents.map((e) => ({ id: e.id, title: e.title }))
 
   const filteredJoinable = joinFilter
     ? joinable.filter((t) => String(t.hackathonId) === String(joinFilter))
@@ -109,9 +146,9 @@ function Teams() {
     }
   }
 
-  const handleJoin = async (teamId) => {
+  const handleJoin = async (team) => {
     try {
-      await joinTeam(teamId)
+      await joinTeam(team.id)
       toast?.showToast('Joined team!')
       load()
     } catch (err) {
@@ -153,7 +190,6 @@ function Teams() {
           label="Add members (comma-separated emails, optional)"
           value={invites}
           onChange={(e) => setInvites(e.target.value)}
-          placeholder="alice@cognizant.com, bob@cognizant.com"
         />
         <p className="mt-1 text-xs text-slate-400">Members must be registered users — unknown emails are rejected.</p>
         {formError && <p className="mt-3 text-sm font-medium text-red-600">{formError}</p>}
@@ -191,11 +227,7 @@ function Teams() {
               <TeamCard
                 key={t.id}
                 team={t}
-                action={
-                  <Button size="sm" className="mt-3 w-full" onClick={() => handleJoin(t.id)}>
-                    Join team
-                  </Button>
-                }
+                action={<JoinButton team={t} onJoin={handleJoin} />}
               />
             ))}
           </div>
