@@ -262,15 +262,86 @@ public class SessionService {
         return TIME_LIMIT_SECONDS - elapsed;
     }
 
-    private QuestionDto toQuestionDto(Question q) {
+    private QuestionDto toQuestionDto(Question q, UUID sessionId) {
+        Object items = q.getItems();
+        Object zones = q.getZones();
+        // Jumble the presentation of drag activities so nothing is shown pre-solved.
+        // Scoring is by id, so display order is cosmetic. The shuffle is deterministic
+        // per (session, question) — stable across pause/resume — and never the answer order.
+        if ("drag".equals(q.getSection())) {
+            long seed = shuffleSeed(sessionId, q.getId());
+            items = shuffledItems(q, seed);
+            if ("match".equals(q.getQuestionType())) {
+                zones = shuffledZones(q, (List<?>) items, seed);
+            }
+        }
         return new QuestionDto(
                 q.getId(), q.getSection(), q.getQuestionType(), q.getQuestionText(), q.getPrompt(),
-                q.getPatternData(), q.getOptions(), q.getItems(), q.getZones(), q.getSuffix());
+                q.getPatternData(), q.getOptions(), items, zones, q.getSuffix());
+    }
+
+    private long shuffleSeed(UUID sessionId, UUID questionId) {
+        return sessionId.getMostSignificantBits() ^ sessionId.getLeastSignificantBits()
+                ^ (questionId.getMostSignificantBits() * 31) ^ questionId.getLeastSignificantBits();
+    }
+
+    /** Item id at a display position, for alignment checks. */
+    private String itemId(Object item) {
+        return item instanceof Map<?, ?> m ? String.valueOf(m.get("id")) : null;
+    }
+
+    /** Shuffled copy of the items; for ordering activities it is never the correct order. */
+    @SuppressWarnings("unchecked")
+    private Object shuffledItems(Question q, long seed) {
+        if (!(q.getItems() instanceof List<?> src) || src.size() < 2) return q.getItems();
+        List<Object> items = new ArrayList<>((List<Object>) src);
+        boolean isOrder = "sequence".equals(q.getQuestionType()) || "rank".equals(q.getQuestionType());
+        List<String> correct = isOrder && q.getAnswerKey() instanceof List
+                ? (List<String>) q.getAnswerKey() : null;
+        for (int attempt = 0; attempt < 6; attempt++) {
+            Collections.shuffle(items, new Random(seed + attempt));
+            if (correct == null || !matchesOrder(items, correct)) return items;
+        }
+        Collections.rotate(items, 1); // last resort: guarantee it differs from the answer
+        return items;
+    }
+
+    /** Shuffled copy of match solutions; never row-aligned with the presented problems. */
+    @SuppressWarnings("unchecked")
+    private Object shuffledZones(Question q, List<?> presentedItems, long seed) {
+        if (!(q.getZones() instanceof List<?> src) || src.size() < 2) return q.getZones();
+        List<Object> zones = new ArrayList<>((List<Object>) src);
+        Map<String, String> key = q.getAnswerKey() instanceof Map ? (Map<String, String>) q.getAnswerKey() : null;
+        for (int attempt = 0; attempt < 6; attempt++) {
+            Collections.shuffle(zones, new Random(seed * 31 + attempt));
+            if (key == null || !rowsAligned(presentedItems, zones, key)) return zones;
+        }
+        Collections.rotate(zones, 1);
+        return zones;
+    }
+
+    /** True if the item-id order exactly equals the answer-key order. */
+    private boolean matchesOrder(List<?> items, List<String> correct) {
+        if (items.size() != correct.size()) return false;
+        for (int i = 0; i < items.size(); i++) {
+            if (!correct.get(i).equals(itemId(items.get(i)))) return false;
+        }
+        return true;
+    }
+
+    /** True if every problem row lines up with its correct solution row (trivially solved). */
+    private boolean rowsAligned(List<?> items, List<?> zones, Map<String, String> key) {
+        if (items.size() != zones.size()) return false;
+        for (int i = 0; i < items.size(); i++) {
+            String zoneId = zones.get(i) instanceof Map<?, ?> m ? String.valueOf(m.get("id")) : null;
+            if (!java.util.Objects.equals(key.get(itemId(items.get(i))), zoneId)) return false;
+        }
+        return true;
     }
 
     private SessionStartResponse buildStartResponse(AssessmentSession session, boolean resumed, long remaining) {
         List<Response> rows = responseRepository.findBySessionIdOrderByDisplayOrder(session.getId());
-        List<QuestionDto> questions = rows.stream().map(r -> toQuestionDto(r.getQuestion())).collect(Collectors.toList());
+        List<QuestionDto> questions = rows.stream().map(r -> toQuestionDto(r.getQuestion(), session.getId())).collect(Collectors.toList());
         List<SavedResponseDto> saved = rows.stream().map(r -> new SavedResponseDto(
                 r.getQuestion().getId(), r.getSelectedOptionIndex(), r.getAnswer(),
                 r.getDragAttempts(), r.getTimeTakenSeconds(), r.getAttemptCount())).collect(Collectors.toList());
