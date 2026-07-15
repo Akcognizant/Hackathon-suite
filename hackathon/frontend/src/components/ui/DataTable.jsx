@@ -13,6 +13,7 @@
 //   page (0-based), totalPages, totalElements, pageSize
 //   onPageChange(nextPage)       -> parent refetches
 //   renderExpanded?(row)         -> optional expandable detail row
+//   rowClassName?(row)           -> optional extra classes for a row (e.g. highlight)
 
 import { Fragment, useState } from 'react'
 
@@ -41,6 +42,7 @@ function DataTable({
   pageSize = 10,
   onPageChange,
   renderExpanded,
+  rowClassName,
 }) {
   const [expandedKey, setExpandedKey] = useState(null)
   const [jumpValue, setJumpValue] = useState('')
@@ -119,7 +121,7 @@ function DataTable({
                     <tr
                       className={`transition-colors hover:bg-slate-50 ${
                         isExpanded ? '' : 'border-b border-gray-100'
-                      }`}
+                      } ${rowClassName ? rowClassName(row) : ''}`}
                     >
                       {renderExpanded && (
                         <td className="px-4 py-4">

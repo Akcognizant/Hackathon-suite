@@ -62,3 +62,9 @@ export async function getHistory() {
   const { data } = await axiosClient.get('/participant/history')
   return data
 }
+
+/** Ranked leaderboard for one event: [{ rank, team, projectTitle, score }]. */
+export async function getLeaderboard(eventId) {
+  const { data } = await axiosClient.get(`/leaderboard/${eventId}`)
+  return data
+}
