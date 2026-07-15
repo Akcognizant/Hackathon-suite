@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StatCard from '../../components/ui/StatCard'
 import { getEvents, getMyTeams, getMySubmissions } from '../../api/participantApi'
+import { formatDateRange } from '../../utils/dates'
 
 function Dashboard() {
   const [events, setEvents] = useState([])
@@ -61,7 +62,7 @@ function Dashboard() {
                   <div>
                     <p className="font-medium text-slate-800">{e.title}</p>
                     <p className="text-xs text-slate-500">
-                      {e.startDate} → {e.endDate}
+                      {formatDateRange(e.startDate, e.endDate)}
                     </p>
                   </div>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">

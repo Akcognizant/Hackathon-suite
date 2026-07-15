@@ -11,6 +11,8 @@ import {
   createTeam,
   joinTeam,
 } from '../../api/participantApi'
+import Pagination from '../../components/ui/Pagination'
+import { usePagination } from '../../utils/usePagination'
 
 function TeamCard({ team, action }) {
   return (
@@ -108,15 +110,27 @@ function Teams() {
     load()
   }, [])
 
-  const openEvents = events.filter((e) => (e.status || '').toUpperCase() !== 'COMPLETED')
-  const selectedEvent = events.find((e) => String(e.id) === String(hackathonId))
+  // You can only create/join a team before the day a hackathon starts, so the
+  // options here are limited to events whose start date is still in the future
+  // (COMPLETED and already-started events drop out).
+  const today = new Date().toISOString().slice(0, 10)
+  const registrationOpen = (e) =>
+    (e.status || '').toUpperCase() !== 'COMPLETED' && (!e.startDate || today < e.startDate)
 
-  // Filter dropdown lists all active/upcoming hackathons (not just ones with open teams).
+  const openEvents = events.filter(registrationOpen)
+  const selectedEvent = events.find((e) => String(e.id) === String(hackathonId))
+  const openHackathonIds = new Set(openEvents.map((e) => String(e.id)))
+
+  // Filter dropdown lists all events still open for registration.
   const joinEventOptions = openEvents.map((e) => ({ id: e.id, title: e.title }))
 
+  // Only surface joinable teams for events that are still open for registration.
+  const joinableOpen = joinable.filter((t) => openHackathonIds.has(String(t.hackathonId)))
   const filteredJoinable = joinFilter
-    ? joinable.filter((t) => String(t.hackathonId) === String(joinFilter))
-    : joinable
+    ? joinableOpen.filter((t) => String(t.hackathonId) === String(joinFilter))
+    : joinableOpen
+
+  const { page, totalPages, pageItems, next, prev } = usePagination(filteredJoinable, 6)
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -180,7 +194,7 @@ function Teams() {
       <form onSubmit={handleCreate} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Create a team</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Input label="Team name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Neural Ninjas" />
+          <Input label="Team name" value={name} onChange={(e) => setName(e.target.value)} required />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Event <span className="text-red-500">*</span>
@@ -200,7 +214,7 @@ function Teams() {
         </div>
         <Input
           className="mt-4"
-          label="Add members (comma-separated emails, optional)"
+          label="Add members"
           value={invites}
           onChange={(e) => setInvites(e.target.value)}
         />
@@ -240,13 +254,14 @@ function Teams() {
         </div>
         {loading ? (
           <p className="text-sm text-slate-400">Loading…</p>
-        ) : joinable.length === 0 ? (
+        ) : joinableOpen.length === 0 ? (
           <p className="text-sm text-slate-400">No open teams available for events you haven’t joined.</p>
         ) : filteredJoinable.length === 0 ? (
           <p className="text-sm text-slate-400">No open teams for the selected event.</p>
         ) : (
+          <>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredJoinable.map((t) => (
+            {pageItems.map((t) => (
               <TeamCard
                 key={t.id}
                 team={t}
@@ -254,6 +269,8 @@ function Teams() {
               />
             ))}
           </div>
+          <Pagination page={page} totalPages={totalPages} onPrev={prev} onNext={next} />
+          </>
         )}
       </section>
     </div>

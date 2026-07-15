@@ -11,6 +11,7 @@ import com.cognizant.hackathon.service.ParticipantPortalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +63,12 @@ public class ParticipantPortalController {
     public ParticipantTeamDto addMember(@PathVariable Long id,
                                         @Valid @RequestBody AddTeamMemberRequest request) {
         return service.addMember(id, request.email());
+    }
+
+    @DeleteMapping("/teams/{id}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void leaveTeam(@PathVariable Long id) {
+        service.leaveTeam(id);
     }
 
     @GetMapping("/submissions/me")

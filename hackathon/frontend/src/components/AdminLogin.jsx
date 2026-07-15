@@ -189,13 +189,14 @@ function AdminLogin() {
                 <span className="h-px flex-1 bg-slate-200" />
               </div>
 
-              {/* SSO — demo shortcut: signs in as the seeded admin account. */}
+              {/* SSO — static, non-interactive placeholder (no auto-login). */}
               <Button
                 type="button"
                 variant="secondary"
-                disabled={loading}
-                onClick={() => authenticate('admin@cognizant.com', 'admin123')}
-                className="w-full"
+                disabled
+                aria-disabled="true"
+                tabIndex={-1}
+                className="w-full cursor-default"
               >
                 Sign in with Cognizant SSO
               </Button>

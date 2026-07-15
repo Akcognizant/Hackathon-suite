@@ -110,6 +110,7 @@ public class ParticipantPortalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "You are already in a team for this hackathon");
         }
+        assertRegistrationOpen(hackathon);
 
         // Resolve the full member set (creator + invited emails), de-duplicated.
         Set<String> memberEmails = new LinkedHashSet<>();
@@ -173,6 +174,7 @@ public class ParticipantPortalService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "You are already in a team for this hackathon");
         }
+        assertRegistrationOpen(team.getHackathon());
 
         Integer max = team.getHackathon() != null ? team.getHackathon().getMaxTeamSize() : null;
         if (max != null && roster.size() >= max) {
@@ -188,6 +190,32 @@ public class ParticipantPortalService {
         return toTeamDto(team);
     }
 
+    /**
+     * Leave a team the current participant belongs to. When the last member leaves,
+     * the now-empty team (and any submission it had) is deleted.
+     */
+    @Transactional
+    public void leaveTeam(Long teamId) {
+        String me = currentEmail();
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found"));
+
+        List<Participant> roster = participantRepository.findByTeamId(team.getId());
+        Participant mine = roster.stream()
+                .filter(p -> me.equalsIgnoreCase(p.getEmail()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "You are not a member of this team"));
+
+        participantRepository.delete(mine);
+
+        // If that was the last member, delete the empty team (and its submission).
+        if (roster.size() <= 1) {
+            submissionRepository.deleteAll(submissionRepository.findByTeamId(team.getId()));
+            teamRepository.delete(team);
+        }
+    }
+
     /** Add a registered user to a team the current participant belongs to. */
     @Transactional
     public ParticipantTeamDto addMember(Long teamId, String rawEmail) {
@@ -201,6 +229,7 @@ public class ParticipantPortalService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You can only add members to a team you belong to");
         }
+        assertRegistrationOpen(team.getHackathon());
 
         String email = rawEmail == null ? "" : rawEmail.trim().toLowerCase();
         if (email.isEmpty()) {
@@ -319,7 +348,7 @@ public class ParticipantPortalService {
             Team team = myTeamByHackathon.get(h.getId());
             if (team == null) {
                 out.add(new ParticipantHistoryDto(
-                        h.getId(), h.getTitle(), h.getStatus(), false,
+                        h.getId(), h.getTitle(), h.getStartDate(), h.getEndDate(), h.getStatus(), false,
                         null, null, null, null, null));
                 continue;
             }
@@ -335,7 +364,7 @@ public class ParticipantPortalService {
                 }
             }
             out.add(new ParticipantHistoryDto(
-                    h.getId(), h.getTitle(), h.getStatus(), true,
+                    h.getId(), h.getTitle(), h.getStartDate(), h.getEndDate(), h.getStatus(), true,
                     team.getName(),
                     submission != null ? submission.getProjectTitle() : null,
                     submission != null && submission.getStatus() != null ? submission.getStatus().name() : null,
@@ -352,12 +381,15 @@ public class ParticipantPortalService {
                         p.getName(), p.getEmail(),
                         p.getRole() != null ? p.getRole().name() : null))
                 .toList();
+        Hackathon hk = team.getHackathon();
         return new ParticipantTeamDto(
                 team.getId(),
                 team.getName(),
                 team.getStatus() != null ? team.getStatus().name() : null,
-                team.getHackathon() != null ? team.getHackathon().getId() : null,
-                team.getHackathon() != null ? team.getHackathon().getTitle() : null,
+                hk != null ? hk.getId() : null,
+                hk != null ? hk.getTitle() : null,
+                hk != null ? hk.getStatus() : null,
+                hk != null ? hk.getEndDate() : null,
                 members,
                 members.size());
     }
@@ -376,6 +408,20 @@ public class ParticipantPortalService {
                 s.getTeam() != null ? s.getTeam().getName() : null,
                 s.getHackathon() != null ? s.getHackathon().getId() : null,
                 s.getHackathon() != null ? s.getHackathon().getTitle() : null);
+    }
+
+    /**
+     * Team registration (create / join / add member) is only open up to — but not
+     * including — the day the hackathon starts. On or after the start date it closes.
+     */
+    private void assertRegistrationOpen(Hackathon hackathon) {
+        if (hackathon != null && hackathon.getStartDate() != null
+                && !LocalDate.now().isBefore(hackathon.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Team registration for " + hackathon.getTitle()
+                            + " closed when it started on " + hackathon.getStartDate()
+                            + ". You can no longer create or join a team for this event.");
+        }
     }
 
     private void validateSize(Hackathon hackathon, int size) {

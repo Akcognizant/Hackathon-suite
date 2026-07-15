@@ -212,6 +212,14 @@ function HackathonForm() {
 
   return (
     <div className="max-w-2xl">
+      <button
+        type="button"
+        onClick={() => navigate('/hackathons')}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        Back to Manage Hackathons
+      </button>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-900">
           {isEditing ? 'Edit Hackathon' : 'Create New Hackathon'}
