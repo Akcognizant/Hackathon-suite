@@ -2,25 +2,40 @@
 
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getMySubmissions } from '../../api/participantApi'
+import { getMySubmissions, getEvents } from '../../api/participantApi'
+import { SUBMISSION_STATUS_STYLES, submissionDisplayStatus } from '../../utils/submissionState'
+import Pagination from '../../components/ui/Pagination'
+import { usePagination } from '../../utils/usePagination'
 
-const STATUS_STYLES = {
-  PENDING: 'bg-amber-100 text-amber-800',
-  APPROVED: 'bg-emerald-100 text-emerald-800',
-  REJECTED: 'bg-red-100 text-red-700',
-}
+const STATUS_STYLES = SUBMISSION_STATUS_STYLES
 
 function Submissions() {
   const navigate = useNavigate()
   const [submissions, setSubmissions] = useState([])
+  const [eventsById, setEventsById] = useState({})
   const [loading, setLoading] = useState(true)
+  const { page, totalPages, pageItems, next, prev } = usePagination(submissions, 8)
 
   useEffect(() => {
-    getMySubmissions()
-      .then(setSubmissions)
+    Promise.all([getMySubmissions(), getEvents()])
+      .then(([subs, events]) => {
+        setSubmissions(subs)
+        const map = {}
+        for (const e of events) map[String(e.id)] = e
+        setEventsById(map)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  // A hackathon is over once it's COMPLETED or its end date has passed — editing
+  // a submission is no longer allowed after that.
+  const today = new Date().toISOString().slice(0, 10)
+  const isOver = (hackathonId) => {
+    const e = eventsById[String(hackathonId)]
+    if (!e) return false
+    return (e.status || '').toUpperCase() === 'COMPLETED' || (e.endDate && e.endDate < today)
+  }
 
   return (
     <div className="space-y-6">
@@ -58,7 +73,7 @@ function Submissions() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {submissions.map((s) => (
+              {pageItems.map((s) => (
                 <tr key={s.id} className="align-top">
                   <td className="px-6 py-4">
                     <p className="font-medium text-slate-800">{s.projectTitle}</p>
@@ -69,9 +84,14 @@ function Submissions() {
                   <td className="px-6 py-4 text-slate-600">{s.teamName}</td>
                   <td className="px-6 py-4 text-slate-600">{s.hackathonTitle}</td>
                   <td className="px-6 py-4">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[s.status] || 'bg-slate-100 text-slate-600'}`}>
-                      {s.status}
-                    </span>
+                    {(() => {
+                      const st = submissionDisplayStatus(s)
+                      return (
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[st] || 'bg-slate-100 text-slate-600'}`}>
+                          {st}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className="px-6 py-4 tabular-nums text-slate-700">{s.score ?? '—'}</td>
                   <td className="px-6 py-4">
@@ -81,8 +101,10 @@ function Submissions() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
+                      disabled={isOver(s.hackathonId)}
                       onClick={() => navigate('/portal/submit', { state: { teamId: s.teamId } })}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                      title={isOver(s.hackathonId) ? 'The hackathon is over — editing is closed.' : undefined}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white"
                     >
                       Edit
                     </button>
@@ -91,6 +113,7 @@ function Submissions() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPrev={prev} onNext={next} className="mb-4" />
         </div>
       )}
     </div>

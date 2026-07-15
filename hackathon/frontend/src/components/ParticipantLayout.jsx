@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logoutToLogin } from '../api/authService'
+import LogoutConfirmModal from './LogoutConfirmModal'
 
 const iconBase = 'h-5 w-5 shrink-0'
 
@@ -87,6 +88,7 @@ function ParticipantLayout() {
     (typeof window !== 'undefined' && localStorage.getItem('adminEmail')) || ''
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const menuRef = useRef(null)
 
   const handleNavClick = () => {
@@ -96,12 +98,8 @@ function ParticipantLayout() {
   }
 
   const handleLogout = () => {
-    logoutToLogin()
-  }
-
-  const go = (to) => {
     setIsMenuOpen(false)
-    navigate(to)
+    setShowLogoutConfirm(true)
   }
 
   // Close the profile menu on outside click / Escape.
@@ -135,7 +133,17 @@ function ParticipantLayout() {
             Participant
           </span>
         </div>
-        <div className="relative" ref={menuRef}>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => navigate('/portal/help')}
+            aria-label="Help"
+            title="Help"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            <HelpIcon className="h-5 w-5" />
+          </button>
+          <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setIsMenuOpen((o) => !o)}
@@ -166,16 +174,12 @@ function ParticipantLayout() {
               </div>
             </div>
             <div className="flex flex-col p-2">
-              <button role="menuitem" onClick={() => go('/portal/help')}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900">
-                <HelpIcon className="h-4 w-4 text-slate-400" /> Help
-              </button>
-              <div className="mx-2 my-1 h-px bg-slate-100" />
               <button role="menuitem" onClick={handleLogout}
                 className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700">
-                <LogoutIcon className="h-4 w-4 text-slate-400" /> Logout
+                <LogoutIcon className="h-4 w-4 text-slate-400" /> Sign out
               </button>
             </div>
+          </div>
           </div>
         </div>
       </header>
@@ -232,6 +236,13 @@ function ParticipantLayout() {
           © 2026 Cognizant, All rights reserved.
         </footer>
       </div>
+
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onConfirm={logoutToLogin}
+          onClose={() => setShowLogoutConfirm(false)}
+        />
+      )}
     </div>
   )
 }

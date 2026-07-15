@@ -14,6 +14,7 @@ import { logoutToAdminLogin } from '../api/authService'
 import { accessRequestCount } from '../api/accessRequestApi'
 import { usePermissions } from '../hooks/usePermissions'
 import MessagesInbox from './MessagesInbox'
+import LogoutConfirmModal from './LogoutConfirmModal'
 
 const STORAGE_KEY = 'shared_hackathon_data'
 
@@ -285,6 +286,7 @@ function AdminLayout() {
     ? { label: 'Judge', className: 'bg-emerald-100 text-emerald-800' }
     : { label: 'Admin', className: 'bg-indigo-100 text-indigo-800' }
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const userMenuRef = useRef(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
@@ -321,8 +323,8 @@ function AdminLayout() {
   const pendingItems = useMemo(() => loadPendingItems(), [location.pathname])
 
   const handleLogout = () => {
-    // Admin/judge return to the hackathon login (their front door).
-    logoutToAdminLogin()
+    setIsUserMenuOpen(false)
+    setShowLogoutConfirm(true)
   }
 
   // Pending access-request count for the nav badge (ADMIN only). Re-read on route
@@ -614,7 +616,7 @@ function AdminLayout() {
                   className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-700"
                 >
                   <LogoutIcon className="h-4 w-4 text-slate-400 group-hover:text-red-500" />
-                  Logout
+                  Sign out
                 </button>
               </div>
             </div>
@@ -954,6 +956,13 @@ function AdminLayout() {
               </div>
           </div>
         </div>
+      )}
+
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onConfirm={logoutToAdminLogin}
+          onClose={() => setShowLogoutConfirm(false)}
+        />
       )}
     </div>
   )
