@@ -162,7 +162,7 @@ function MessagesInbox({ open = false }) {
     <div
       role="dialog"
       aria-label="Messages and notifications"
-      className="absolute right-0 top-[calc(100%+0.625rem)] z-50 flex max-h-[calc(100vh-6rem)] w-[22rem] origin-top-right flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
+      className="absolute right-0 top-[calc(100%+0.625rem)] z-50 w-[22rem] origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
     >
       {/* Premium gradient header */}
       <div className="relative flex shrink-0 items-center gap-3 bg-gradient-to-r from-indigo-950 via-blue-900 to-blue-800 px-4 py-3.5 text-white">
@@ -248,7 +248,7 @@ function MessagesInbox({ open = false }) {
         </button>
       </div>
 
-      <div className="min-h-[20rem] flex-1 overflow-y-auto px-2 pb-2">
+      <div className="max-h-[20rem] overflow-y-auto px-2 pb-2">
         {loading ? (
           <div className="space-y-2 px-2 py-2">
             {[0, 1, 2].map((i) => (
