@@ -335,6 +335,27 @@ function AdminLayout() {
     accessRequestCount().then(setPendingRequests).catch(() => {})
   }, [isAdmin, location.pathname])
 
+  // Unread direct-message count for the bell badge. Polled so a message received
+  // from another user (e.g. admin → judge) bumps the red count without a refresh.
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const refreshUnread = () =>
+    axiosClient
+      .get('/admin/messages/unread-count')
+      .then((res) => setUnreadMessages(res.data?.count ?? 0))
+      .catch(() => {})
+  useEffect(() => {
+    refreshUnread()
+    const timer = setInterval(refreshUnread, 20000)
+    return () => clearInterval(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // Opening the inbox marks messages read; refresh the count when it closes so the
+  // badge clears.
+  useEffect(() => {
+    if (!isInboxOpen) refreshUnread()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInboxOpen])
+
   // Admins additionally get the "Access Requests" nav entry (with a pending badge).
   const navItems = isAdmin
     ? [...NAV_ITEMS, { label: 'Access Requests', to: '/access-requests', end: false, Icon: MailIcon, badge: pendingRequests }]
@@ -539,13 +560,13 @@ function AdminLayout() {
             <button
               type="button"
               onClick={() => setIsInboxOpen((open) => !open)}
-              aria-label={`Messages & notifications (${pendingItems.length} pending)`}
+              aria-label={`Messages & notifications (${unreadMessages} unread, ${pendingItems.length} pending)`}
               className="relative rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <BellIcon className={iconBase} />
-              {pendingItems.length > 0 && (
+              {(unreadMessages + pendingItems.length) > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
-                  {pendingItems.length}
+                  {unreadMessages + pendingItems.length}
                 </span>
               )}
             </button>
