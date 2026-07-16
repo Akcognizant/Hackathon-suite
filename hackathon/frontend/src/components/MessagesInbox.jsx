@@ -176,14 +176,15 @@ function MessagesInbox({ open = false }) {
     }
   }
 
-  // Clear inbox: deletes the user's direct messages. Announcements are global
-  // broadcasts (shared across users), so they intentionally remain.
+  // Clear inbox: deletes the user's direct messages and hides existing announcements
+  // for this user (server records a per-user clear time; announcements aren't deleted
+  // globally). The whole inbox view clears for the current user.
   const handleClear = async () => {
     if (clearing) return
     setClearing(true)
     try {
       await axiosClient.delete('/admin/messages/inbox')
-      setMessages((prev) => prev.filter((m) => m.messageType === 'ANNOUNCEMENT'))
+      setMessages([])
       showToast('Inbox cleared.', 'success')
     } catch {
       showToast('Failed to clear inbox.', 'error')
@@ -192,8 +193,9 @@ function MessagesInbox({ open = false }) {
     }
   }
 
-  // Only direct messages can be cleared (announcements are global).
-  const hasClearable = messages.some((m) => m.messageType !== 'ANNOUNCEMENT')
+  // Clearable whenever there's anything in the inbox (directs are deleted,
+  // announcements are hidden per-user).
+  const hasClearable = messages.length > 0
 
   if (!open) return null
 
