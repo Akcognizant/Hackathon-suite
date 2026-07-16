@@ -203,22 +203,19 @@ function MessagesInbox({ open = false }) {
     <div
       role="dialog"
       aria-label="Messages and notifications"
-      className="absolute right-0 top-[calc(100%+0.625rem)] z-50 w-[22rem] origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
+      className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-80 origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
     >
       {/* Premium gradient header */}
-      <div className="relative flex shrink-0 items-center gap-3 bg-gradient-to-r from-indigo-950 via-blue-900 to-blue-800 px-4 py-3.5 text-white">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 backdrop-blur">
-          <BellIcon className="h-5 w-5" />
+      <div className="relative flex shrink-0 items-center gap-2.5 bg-gradient-to-r from-indigo-950 via-blue-900 to-blue-800 px-3.5 py-2.5 text-white">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+          <BellIcon className="h-4 w-4" />
         </span>
-        <div className="min-w-0">
-          <p className="text-sm font-bold leading-tight">Messages &amp; Notifications</p>
-          <p className="text-[11px] text-blue-200">Compose, broadcast &amp; review</p>
-        </div>
+        <p className="text-sm font-bold leading-tight">Messages &amp; Notifications</p>
       </div>
 
       {/* Compose */}
-      <div className="shrink-0 border-b border-slate-100 bg-slate-50/70 p-3.5">
-        <div className="space-y-2">
+      <div className="shrink-0 border-b border-slate-100 bg-slate-50/70 p-2.5">
+        <div className="space-y-1.5">
           {/* Recipient group — admins can also broadcast to all participants. */}
           {canBroadcast && (
             <CustomDropdown
@@ -274,7 +271,7 @@ function MessagesInbox({ open = false }) {
       </div>
 
       {/* Inbox */}
-      <div className="flex shrink-0 items-center justify-between px-4 pb-1.5 pt-3">
+      <div className="flex shrink-0 items-center justify-between px-3.5 pb-1 pt-2.5">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Inbox</p>
         {/* Always visible; disabled when there's nothing the user can clear. */}
         <button
@@ -289,7 +286,7 @@ function MessagesInbox({ open = false }) {
         </button>
       </div>
 
-      <div className="px-2 pb-3">
+      <div className="px-2 pb-2">
         {loading ? (
           <div className="space-y-2 px-2 py-2">
             {[0, 1].map((i) => (
@@ -303,12 +300,11 @@ function MessagesInbox({ open = false }) {
             ))}
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-              <InboxIcon className="h-6 w-6" />
+          <div className="flex flex-col items-center gap-1.5 px-4 py-6 text-center">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              <InboxIcon className="h-5 w-5" />
             </span>
             <p className="text-sm font-medium text-slate-500">No messages yet</p>
-            <p className="text-xs text-slate-400">Direct messages and announcements will appear here.</p>
           </div>
         ) : (
           <div className="space-y-1">
