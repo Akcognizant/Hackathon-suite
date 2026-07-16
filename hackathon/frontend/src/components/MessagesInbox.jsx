@@ -271,12 +271,16 @@ function MessagesInbox({ open = false }) {
           </div>
         ) : (
           <ul className="space-y-0.5">
-            {messages.map((m) => {
+            {messages.map((m, i) => {
               const announcement = m.messageType === 'ANNOUNCEMENT'
               return (
                 <li
                   key={m.id}
-                  className="flex gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-slate-50"
+                  className={`flex gap-3 px-2 py-2.5 transition-colors hover:bg-slate-50 ${
+                    i === 0
+                      ? 'sticky top-0 z-10 border-b border-slate-100 bg-white/95 backdrop-blur'
+                      : 'rounded-xl'
+                  }`}
                 >
                   {/* Avatar */}
                   <span
