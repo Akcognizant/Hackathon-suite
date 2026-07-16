@@ -287,8 +287,6 @@ function AdminDashboard() {
                 >
                   {/* Top accent bar */}
                   <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.tone.bar}`} />
-                  {/* Faint decorative background icon */}
-                  <Icon className="pointer-events-none absolute -right-5 -top-3 h-28 w-28 text-slate-50 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6" />
 
                   <div className="relative flex items-start justify-between gap-4">
                     <div>
