@@ -56,6 +56,10 @@ public class Submission {
     @Column(length = 2000)
     private String aiFeedback;
 
+    /** Judge/admin remarks shown to the team as a "response" to their submission. */
+    @Column(length = 2000)
+    private String feedback;
+
     /** Per-criterion score breakdown captured during evaluation. */
     @ElementCollection
     @CollectionTable(name = "submission_score_breakdown", joinColumns = @JoinColumn(name = "submission_id"))

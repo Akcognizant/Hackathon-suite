@@ -16,7 +16,7 @@ import { usePagination } from '../../utils/usePagination'
 
 function TeamCard({ team, action }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="mb-1 flex items-start justify-between gap-2">
         <h3 className="font-semibold text-slate-900">{team.name}</h3>
         <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
@@ -191,8 +191,13 @@ function Teams() {
       </div>
 
       {/* Create team */}
-      <form onSubmit={handleCreate} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Create a team</h2>
+      <form onSubmit={handleCreate} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+          </span>
+          Create a team
+        </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input label="Team name" value={name} onChange={(e) => setName(e.target.value)} required />
           <div>
@@ -224,9 +229,7 @@ function Teams() {
             Team size for {selectedEvent.title}:{' '}
             <span className="font-medium text-slate-700">
               {selectedEvent.minTeamSize ?? 1}–{selectedEvent.maxTeamSize ?? '∞'} members
-            </span>{' '}
-            (including you). You + {invites.split(',').map((s) => s.trim()).filter(Boolean).length} invited ={' '}
-            {1 + invites.split(',').map((s) => s.trim()).filter(Boolean).length}.
+            </span>
           </p>
         )}
         {formError && <p className="mt-3 text-sm font-medium text-red-600">{formError}</p>}

@@ -68,3 +68,23 @@ export async function getLeaderboard(eventId) {
   const { data } = await axiosClient.get(`/leaderboard/${eventId}`)
   return data
 }
+
+// --- Notifications: messages an admin sent me (direct + announcements) ---
+
+export async function getMyMessages() {
+  const { data } = await axiosClient.get('/participant/messages')
+  return data
+}
+
+export async function getMyUnreadCount() {
+  const { data } = await axiosClient.get('/participant/messages/unread-count')
+  return data.count ?? 0
+}
+
+export async function markMessageRead(id) {
+  await axiosClient.post(`/participant/messages/${id}/read`)
+}
+
+export async function clearMyMessages() {
+  await axiosClient.delete('/participant/messages')
+}
