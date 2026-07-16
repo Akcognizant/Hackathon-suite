@@ -57,6 +57,43 @@ function InboxIcon({ className }) {
     </svg>
   )
 }
+function ChevronDownIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
+// One inbox message row (avatar + sender + time + content).
+function MessageRow({ m }) {
+  const announcement = m.messageType === 'ANNOUNCEMENT'
+  return (
+    <div className="flex gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-slate-50">
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-sm ${
+          announcement ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-indigo-500 to-blue-600'
+        }`}
+      >
+        {announcement ? <MegaphoneIcon className="h-4 w-4" /> : initials(m.senderEmail)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-1.5">
+            {announcement && (
+              <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                Announcement
+              </span>
+            )}
+            <span className="truncate text-sm font-semibold text-slate-800">{m.senderEmail || 'Unknown sender'}</span>
+          </span>
+          <span className="shrink-0 text-[10px] text-slate-400">{formatTime(m.createdAt)}</span>
+        </div>
+        <p className="mt-0.5 text-sm leading-snug text-slate-600">{m.content}</p>
+      </div>
+    </div>
+  )
+}
 
 // `open` is controlled by the parent (AdminLayout) — the Bell icon is the single trigger.
 function MessagesInbox({ open = false }) {
@@ -70,6 +107,7 @@ function MessagesInbox({ open = false }) {
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [showOlder, setShowOlder] = useState(false)
 
   // Only admins may broadcast to all participants; judges send direct only.
   const canBroadcast = canAccess('ADMIN')
@@ -84,6 +122,7 @@ function MessagesInbox({ open = false }) {
     if (!open) return undefined
     let active = true
     setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect
+    setShowOlder(false) // collapse older messages each time the panel opens
     Promise.all([
       axiosClient.get('/admin/messages/inbox'),
       axiosClient.get('/admin/messages/users'),
@@ -248,10 +287,10 @@ function MessagesInbox({ open = false }) {
         </button>
       </div>
 
-      <div className="max-h-[20rem] overflow-y-auto px-2 pb-2">
+      <div className="px-2 pb-3">
         {loading ? (
           <div className="space-y-2 px-2 py-2">
-            {[0, 1, 2].map((i) => (
+            {[0, 1].map((i) => (
               <div key={i} className="flex animate-pulse gap-3 rounded-xl p-2">
                 <div className="h-9 w-9 shrink-0 rounded-full bg-slate-200" />
                 <div className="flex-1 space-y-2 py-0.5">
@@ -270,49 +309,31 @@ function MessagesInbox({ open = false }) {
             <p className="text-xs text-slate-400">Direct messages and announcements will appear here.</p>
           </div>
         ) : (
-          <ul className="space-y-0.5">
-            {messages.map((m, i) => {
-              const announcement = m.messageType === 'ANNOUNCEMENT'
-              return (
-                <li
-                  key={m.id}
-                  className={`flex gap-3 px-2 py-2.5 transition-colors hover:bg-slate-50 ${
-                    i === 0
-                      ? 'sticky top-0 z-10 border-b border-slate-100 bg-white/95 backdrop-blur'
-                      : 'rounded-xl'
-                  }`}
-                >
-                  {/* Avatar */}
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-sm ${
-                      announcement
-                        ? 'bg-gradient-to-br from-amber-400 to-orange-500'
-                        : 'bg-gradient-to-br from-indigo-500 to-blue-600'
-                    }`}
-                  >
-                    {announcement ? <MegaphoneIcon className="h-4 w-4" /> : initials(m.senderEmail)}
-                  </span>
+          <div className="space-y-1">
+            {/* Latest message, always shown */}
+            <MessageRow m={messages[0]} />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        {announcement && (
-                          <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
-                            Announcement
-                          </span>
-                        )}
-                        <span className="truncate text-sm font-semibold text-slate-800">
-                          {m.senderEmail || 'Unknown sender'}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-[10px] text-slate-400">{formatTime(m.createdAt)}</span>
-                    </div>
-                    <p className="mt-0.5 text-sm leading-snug text-slate-600">{m.content}</p>
+            {/* Older messages collapse behind a toggle, then scroll. */}
+            {messages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowOlder((s) => !s)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50"
+                >
+                  {showOlder ? 'Hide older messages' : `Show ${messages.length - 1} older`}
+                  <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${showOlder ? 'rotate-180' : ''}`} />
+                </button>
+                {showOlder && (
+                  <div className="max-h-[15rem] space-y-0.5 overflow-y-auto border-t border-slate-100 pt-1">
+                    {messages.slice(1).map((m) => (
+                      <MessageRow key={m.id} m={m} />
+                    ))}
                   </div>
-                </li>
-              )
-            })}
-          </ul>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>
