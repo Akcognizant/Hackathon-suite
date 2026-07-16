@@ -73,6 +73,8 @@ public class ParticipantPortalService {
                 .map(Participant::getTeam)
                 .filter(java.util.Objects::nonNull)
                 .distinct()
+                // Newest team first (teams use an auto-incrementing id).
+                .sorted(java.util.Comparator.comparing(Team::getId).reversed())
                 .map(this::toTeamDto)
                 .toList();
     }
@@ -150,6 +152,8 @@ public class ParticipantPortalService {
                     .name(displayName(memberEmail))
                     .email(memberEmail)
                     .team(team)
+                    // The creator is the team lead.
+                    .teamLead(memberEmail.equals(myEmail))
                     .build());
         }
 
@@ -213,6 +217,18 @@ public class ParticipantPortalService {
         if (roster.size() <= 1) {
             submissionRepository.deleteAll(submissionRepository.findByTeamId(team.getId()));
             teamRepository.delete(team);
+            return;
+        }
+
+        // If the departing member was the lead, hand lead to the earliest remaining member.
+        if (Boolean.TRUE.equals(mine.getTeamLead())) {
+            roster.stream()
+                    .filter(p -> !p.getId().equals(mine.getId()))
+                    .min(java.util.Comparator.comparing(Participant::getId))
+                    .ifPresent(next -> {
+                        next.setTeamLead(true);
+                        participantRepository.save(next);
+                    });
         }
     }
 
@@ -280,11 +296,19 @@ public class ParticipantPortalService {
         Team team = teamRepository.findById(req.teamId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found"));
 
-        boolean isMember = participantRepository.findByTeamId(team.getId()).stream()
+        List<Participant> roster = participantRepository.findByTeamId(team.getId());
+        boolean isMember = roster.stream()
                 .anyMatch(p -> email.equalsIgnoreCase(p.getEmail()));
         if (!isMember) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "You can only submit for a team you belong to");
+        }
+
+        // A team must meet the event's minimum size before it can submit.
+        Integer minSize = team.getHackathon() != null ? team.getHackathon().getMinTeamSize() : null;
+        if (minSize != null && roster.size() < minSize) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This team needs at least " + minSize + " members to submit (currently " + roster.size() + ").");
         }
 
         // Submissions are only accepted within the hackathon's start–end window.
@@ -379,7 +403,8 @@ public class ParticipantPortalService {
         List<ParticipantMemberDto> members = participantRepository.findByTeamId(team.getId()).stream()
                 .map(p -> new ParticipantMemberDto(
                         p.getName(), p.getEmail(),
-                        p.getRole() != null ? p.getRole().name() : null))
+                        p.getRole() != null ? p.getRole().name() : null,
+                        Boolean.TRUE.equals(p.getTeamLead())))
                 .toList();
         Hackathon hk = team.getHackathon();
         return new ParticipantTeamDto(
@@ -404,6 +429,7 @@ public class ParticipantPortalService {
                 s.getScore(),
                 s.getAiScore(),
                 s.getAiFeedback(),
+                s.getFeedback(),
                 s.getTeam() != null ? s.getTeam().getId() : null,
                 s.getTeam() != null ? s.getTeam().getName() : null,
                 s.getHackathon() != null ? s.getHackathon().getId() : null,

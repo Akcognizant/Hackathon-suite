@@ -19,6 +19,9 @@ public record AssignScoreRequest(
         @PositiveOrZero(message = "score must be zero or positive")
         Integer score,
 
+        /** Optional judge/admin remarks shown to the team as a response. */
+        String remarks,
+
         @Valid
         List<ParticipantEvaluation> evaluations
 ) {

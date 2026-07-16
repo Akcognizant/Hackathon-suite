@@ -95,9 +95,14 @@ function SubmitProject() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Submit a project</h1>
-        <p className="mt-1 text-sm text-slate-500">One submission per team — submitting again updates it.</p>
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+        </span>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Submit a project</h1>
+          <p className="mt-1 text-sm text-slate-500">One submission per team — submitting again updates it.</p>
+        </div>
       </div>
 
       {loading ? (
@@ -111,7 +116,7 @@ function SubmitProject() {
           .
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Team <span className="text-red-500">*</span>

@@ -4,6 +4,7 @@ package com.cognizant.hackathon.dto;
 public record ParticipantMemberDto(
         String name,
         String email,
-        String role
+        String role,
+        boolean lead
 ) {
 }

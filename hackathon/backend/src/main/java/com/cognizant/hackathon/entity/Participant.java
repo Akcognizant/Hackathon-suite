@@ -49,6 +49,9 @@ public class Participant {
      */
     private Boolean evaluationStatus;
 
+    /** True for the team's creator (the "Team Lead"). Boolean so pre-existing rows read as not-lead. */
+    private Boolean teamLead;
+
     @ManyToOne
     @JoinColumn(name = "team_id")
     private Team team;

@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logoutToLogin } from '../api/authService'
 import LogoutConfirmModal from './LogoutConfirmModal'
+import { getMyMessages, markMessageRead, clearMyMessages } from '../api/participantApi'
+import { useToast } from '../context/ToastContext'
 
 const iconBase = 'h-5 w-5 shrink-0'
 
@@ -48,11 +50,6 @@ const HistoryIcon = (props) => (
     <path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" />
   </svg>
 )
-const RankingIcon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M3 20h18" /><rect x="5" y="12" width="4" height="7" rx="1" /><rect x="10" y="7" width="4" height="12" rx="1" /><rect x="15" y="14" width="4" height="5" rx="1" />
-  </svg>
-)
 const LogoutIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -63,6 +60,23 @@ const HelpIcon = (props) => (
     <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 )
+const BellIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+)
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000))
+  if (secs < 60) return 'just now'
+  const mins = Math.floor(secs / 60)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
 
 const NAV_ITEMS = [
   { label: 'Dashboard', to: '/portal', end: true, Icon: DashboardIcon },
@@ -71,7 +85,6 @@ const NAV_ITEMS = [
   { label: 'My Teams', to: '/portal/my-teams', end: false, Icon: UsersIcon },
   { label: 'Submit Project', to: '/portal/submit', end: false, Icon: UploadIcon },
   { label: 'My Submissions', to: '/portal/submissions', end: false, Icon: FileIcon },
-  { label: 'Leaderboard', to: '/portal/leaderboard', end: false, Icon: RankingIcon },
   { label: 'History', to: '/portal/history', end: false, Icon: HistoryIcon },
 ]
 
@@ -96,6 +109,94 @@ function ParticipantLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const menuRef = useRef(null)
+
+  // Notifications — messages an admin sent (direct + announcements). "Unopened" is
+  // tracked client-side (localStorage) so announcements — which have no per-user
+  // read flag on the server — also count toward the badge.
+  const toast = useToast()
+  const SEEN_KEY = `notif_seen_${email}`
+  const DISMISSED_KEY = `notif_dismissed_${email}`
+  const [messages, setMessages] = useState([])
+  const [seenIds, setSeenIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')) } catch { return new Set() }
+  })
+  const [dismissedIds, setDismissedIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]')) } catch { return new Set() }
+  })
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const notifRef = useRef(null)
+  const prevUnreadRef = useRef(0)
+  const firstLoadRef = useRef(true)
+
+  // Messages the user hasn't cleared, newest first (as returned by the API).
+  const displayed = messages.filter((m) => !dismissedIds.has(m.id))
+  const unread = displayed.reduce((n, m) => (seenIds.has(m.id) ? n : n + 1), 0)
+
+  const persistSeen = (set) => {
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...set])) } catch { /* ignore quota */ }
+  }
+  const persistDismissed = (set) => {
+    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([...set])) } catch { /* ignore quota */ }
+  }
+
+  const loadNotifications = () => {
+    getMyMessages().then(setMessages).catch(() => {})
+  }
+
+  const toggleNotifications = async () => {
+    const opening = !isNotifOpen
+    setIsNotifOpen(opening)
+    if (!opening) return
+    // Mark direct messages read on the server, and mark everything shown as seen locally.
+    const unreadDirect = displayed.filter((m) => m.receiverId != null && !m.read)
+    await Promise.all(unreadDirect.map((m) => markMessageRead(m.id).catch(() => {})))
+    const next = new Set(seenIds)
+    displayed.forEach((m) => next.add(m.id))
+    setSeenIds(next)
+    persistSeen(next)
+    if (unreadDirect.length) loadNotifications()
+  }
+
+  const clearAll = async () => {
+    // Delete direct messages on the server; dismiss everything (incl. shared
+    // announcements) locally so the inbox empties for this user.
+    await clearMyMessages().catch(() => {})
+    const next = new Set(dismissedIds)
+    messages.forEach((m) => next.add(m.id))
+    setDismissedIds(next)
+    persistDismissed(next)
+    loadNotifications()
+  }
+
+  // Initial load + light polling so new messages surface without a refresh.
+  useEffect(() => {
+    loadNotifications()
+    const id = setInterval(loadNotifications, 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Pop a toast when the unopened count rises (a new message arrived). Skip the
+  // very first computation so we don't toast on page load.
+  useEffect(() => {
+    const count = messages.filter((m) => !dismissedIds.has(m.id)).reduce((n, m) => (seenIds.has(m.id) ? n : n + 1), 0)
+    if (firstLoadRef.current) {
+      firstLoadRef.current = false
+    } else if (count > prevUnreadRef.current) {
+      const delta = count - prevUnreadRef.current
+      toast?.showToast?.(`${delta} new message${delta === 1 ? '' : 's'} from the organizers`, 'info')
+    }
+    prevUnreadRef.current = count
+  }, [messages, seenIds, dismissedIds])
+
+  // Close the notifications panel on outside click / Escape.
+  useEffect(() => {
+    if (!isNotifOpen) return
+    const onPointer = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setIsNotifOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setIsNotifOpen(false) }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onPointer); document.removeEventListener('keydown', onKey) }
+  }, [isNotifOpen])
 
   const handleNavClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < DESKTOP_BREAKPOINT) {
@@ -140,6 +241,72 @@ function ParticipantLayout() {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {/* Notifications */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={toggleNotifications}
+              aria-label="Notifications"
+              title="Notifications"
+              aria-haspopup="menu"
+              aria-expanded={isNotifOpen}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <BellIcon className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] animate-pulse items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </button>
+
+            <div
+              role="menu"
+              aria-hidden={!isNotifOpen}
+              className={`absolute right-0 top-[calc(100%+0.5rem)] z-50 w-80 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl transition-all duration-150 ${
+                isNotifOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Notifications</p>
+                  <p className="text-xs text-slate-500">Messages from the organizers</p>
+                </div>
+                {displayed.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {displayed.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm text-slate-400">No messages yet.</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {displayed.map((m) => (
+                      <li key={m.id} className="px-4 py-3">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            m.messageType === 'ANNOUNCEMENT' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {m.messageType === 'ANNOUNCEMENT' ? 'Announcement' : 'Message'}
+                          </span>
+                          <span className="text-[11px] text-slate-400">{timeAgo(m.createdAt)}</span>
+                        </div>
+                        <p className="whitespace-pre-wrap break-words text-sm text-slate-700">{m.content}</p>
+                        <p className="mt-1 text-[11px] text-slate-400">from {m.senderEmail || 'organizer'}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => navigate('/portal/help')}

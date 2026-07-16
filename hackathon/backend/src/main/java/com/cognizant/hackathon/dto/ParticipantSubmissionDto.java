@@ -10,6 +10,7 @@ public record ParticipantSubmissionDto(
         Integer score,
         Integer aiScore,
         String aiFeedback,
+        String feedback,
         Long teamId,
         String teamName,
         Long hackathonId,

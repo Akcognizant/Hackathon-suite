@@ -53,6 +53,10 @@ public class ScoreService {
 
         submission.setScore(request.score());
         submission.setGradedBy(gradedBy); // mirror onto the submission for table display
+        if (request.remarks() != null) {
+            String trimmed = request.remarks().trim();
+            submission.setFeedback(trimmed.isEmpty() ? null : trimmed);
+        }
         submissionRepository.save(submission);
 
         // Individual member evaluations persist in THIS same transaction, so the
