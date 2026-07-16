@@ -3,10 +3,8 @@
 // hackathon), and a paginated Recent Activity feed backed by the activities API.
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import axiosClient from '../api/axiosClient'
 import Button from '../components/ui/Button'
-import ProtectedRole from '../components/ProtectedRole'
 import { useToast } from '../context/ToastContext'
 
 const MEMBERS_PER_TEAM = 3
@@ -118,7 +116,6 @@ function AdminDashboard() {
   const [clearing, setClearing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
   const { showToast } = useToast()
 
   // Fetch live submissions (metrics/chart) and the first page of the activity
@@ -247,21 +244,12 @@ function AdminDashboard() {
 
   return (
     <div>
-      {/* Page header with Quick Actions */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-indigo-950">Dashboard</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Overview of hackathon activity across the portal.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <ProtectedRole role="ADMIN">
-            <Button variant="primary" onClick={() => navigate('/hackathons/new')}>
-              + New Hackathon
-            </Button>
-          </ProtectedRole>
-        </div>
+      {/* Page header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-indigo-950">Dashboard</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Overview of hackathon activity across the portal.
+        </p>
       </div>
 
       {error ? (
