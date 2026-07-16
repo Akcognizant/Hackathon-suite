@@ -204,6 +204,30 @@ public class SessionService {
         }).collect(Collectors.toList());
     }
 
+    // ── In-progress attempt (read-only; for the dashboard "resume" prompt) ────
+    // Unlike startOrResume, this never mutates: it just reports whether the
+    // candidate has a live (started, not expired, has questions) attempt so the
+    // UI can offer "Resume" instead of "Start new assessment".
+    public Map<String, Object> getInProgress(UUID candidateId) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        Optional<AssessmentSession> existing = sessionRepository
+                .findFirstByCandidate_IdAndStatusOrderByStartedAtDesc(candidateId, "IN_PROGRESS");
+        if (existing.isPresent()) {
+            AssessmentSession s = existing.get();
+            boolean hasRows = !responseRepository.findBySessionIdOrderByDisplayOrder(s.getId()).isEmpty();
+            long remaining = remainingSeconds(s);
+            if (hasRows && remaining > 0) {
+                out.put("inProgress", true);
+                out.put("sessionId", s.getId());
+                out.put("attemptNumber", s.getAttemptNumber());
+                out.put("remainingSeconds", remaining);
+                return out;
+            }
+        }
+        out.put("inProgress", false);
+        return out;
+    }
+
     // ── Hackathon gate ───────────────────────────────────────────────────────
 
     /** True once the candidate has any completed attempt at or above the pass threshold. */

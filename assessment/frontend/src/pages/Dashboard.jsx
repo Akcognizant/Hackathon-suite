@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import HackathonGate from '../components/HackathonGate'
-import { fetchHistory, fetchGateStatus } from '../api'
+import { fetchHistory, fetchGateStatus, fetchInProgress } from '../api'
 
 // Maximum number of assessment attempts allowed per candidate.
 const ATTEMPT_LIMIT = 3
@@ -108,6 +108,7 @@ export default function Dashboard() {
 
     const [attempts, setAttempts] = useState(0)
     const [gate, setGate] = useState(null)
+    const [inProgress, setInProgress] = useState(null)   // active resumable attempt, or null
 
     useEffect(() => {
         if (!candidate?.id) return
@@ -117,6 +118,9 @@ export default function Dashboard() {
         fetchGateStatus()
             .then(res => setGate(res.data))
             .catch(() => setGate(null))
+        fetchInProgress(candidate.id)
+            .then(res => setInProgress(res.data?.inProgress ? res.data : null))
+            .catch(() => setInProgress(null))
     }, [candidate?.id])
 
     // Start is locked once attempts run out, once the candidate has passed, or once blocked.
@@ -144,21 +148,37 @@ export default function Dashboard() {
                         tasks into clear, actionable signals about reasoning ability.
                     </p>
                     <div className="flex flex-wrap items-center gap-3 pt-2">
-                        <StartButton
-                            disabled={startLocked}
-                            tooltip={limitTooltip}
-                            onClick={() => navigate('/instructions')}
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all"
-                            style={{ backgroundColor: '#534AB7' }}
-                            hoverBg="#3C3489"
-                            baseBg="#534AB7"
-                        >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                            Start new assessment
-                        </StartButton>
+                        {inProgress ? (
+                            <button
+                                onClick={() => navigate('/assessment')}
+                                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all active:scale-[0.98]"
+                                style={{ backgroundColor: '#534AB7' }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#3C3489'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#534AB7'}
+                            >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                                </svg>
+                                Resume assessment
+                            </button>
+                        ) : (
+                            <StartButton
+                                disabled={startLocked}
+                                tooltip={limitTooltip}
+                                onClick={() => navigate('/instructions')}
+                                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all"
+                                style={{ backgroundColor: '#534AB7' }}
+                                hoverBg="#3C3489"
+                                baseBg="#534AB7"
+                            >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                Start new assessment
+                            </StartButton>
+                        )}
                         <button
                             onClick={() => navigate('/history')}
                             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium
@@ -175,7 +195,13 @@ export default function Dashboard() {
                             View my history
                         </button>
                     </div>
-                    {attempts >= ATTEMPT_LIMIT && !gate?.passed && (
+                    {inProgress && (
+                        <p className="text-xs flex items-center gap-1.5" style={{ color: '#9FE1CB' }}>
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                            You have an assessment in progress — the timer is still running. Resume to continue where you left off.
+                        </p>
+                    )}
+                    {attempts >= ATTEMPT_LIMIT && !gate?.passed && !inProgress && (
                         <p className="text-xs" style={{ color: '#AFA9EC' }}>
                             You've used all {ATTEMPT_LIMIT} attempts. Review your results from the history page.
                         </p>
@@ -264,36 +290,57 @@ export default function Dashboard() {
                     style={{ backgroundColor: '#EEEDFE' }}>
                     <div className="flex flex-col gap-1">
                         <h2 className="text-lg font-semibold" style={{ color: '#0f172a' }}>
-                            {gate?.passed
-                                ? 'You passed — the hackathon awaits'
-                                : startLocked
-                                    ? "You've reached the attempt limit"
-                                    : 'Ready to test your pattern recognition skills?'}
+                            {inProgress
+                                ? 'You have an assessment in progress'
+                                : gate?.passed
+                                    ? 'You passed — the hackathon awaits'
+                                    : startLocked
+                                        ? "You've reached the attempt limit"
+                                        : 'Ready to test your pattern recognition skills?'}
                         </h2>
                         <p className="text-sm text-slate-500">
-                            {gate?.passed
-                                ? 'Head to the hackathon portal from the banner above.'
-                                : startLocked
-                                    ? `All ${ATTEMPT_LIMIT} attempts used — revisit your past attempts anytime.`
-                                    : 'Take a fresh assessment or revisit your past attempts anytime.'}
+                            {inProgress
+                                ? 'Pick up right where you left off — your answers are saved and the timer is still running.'
+                                : gate?.passed
+                                    ? 'Head to the hackathon portal from the banner above.'
+                                    : startLocked
+                                        ? `All ${ATTEMPT_LIMIT} attempts used — revisit your past attempts anytime.`
+                                        : 'Take a fresh assessment or revisit your past attempts anytime.'}
                         </p>
                     </div>
-                    <StartButton
-                        disabled={startLocked}
-                        tooltip={limitTooltip}
-                        onClick={() => navigate('/instructions')}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all flex-shrink-0 w-fit"
-                        style={{ backgroundColor: '#534AB7' }}
-                        hoverBg="#3C3489"
-                        baseBg="#534AB7"
-                    >
-                        Start new assessment
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                            <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                    </StartButton>
+                    {inProgress ? (
+                        <button
+                            onClick={() => navigate('/assessment')}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all active:scale-[0.98] flex-shrink-0 w-fit"
+                            style={{ backgroundColor: '#534AB7' }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#3C3489'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#534AB7'}
+                        >
+                            Resume assessment
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </button>
+                    ) : (
+                        <StartButton
+                            disabled={startLocked}
+                            tooltip={limitTooltip}
+                            onClick={() => navigate('/instructions')}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-white transition-all flex-shrink-0 w-fit"
+                            style={{ backgroundColor: '#534AB7' }}
+                            hoverBg="#3C3489"
+                            baseBg="#534AB7"
+                        >
+                            Start new assessment
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </StartButton>
+                    )}
                 </section>
 
             </main>

@@ -72,7 +72,7 @@ export default function StartAssessmentModal({ onClose }) {
 
                     {/* Stats row */}
                     <div className="flex justify-between px-1">
-                        {[['15', 'questions'], ['2', 'sections'], ['~20m', 'duration']].map(([val, lbl]) => (
+                        {[['20', 'questions'], ['2', 'sections'], ['~20m', 'duration']].map(([val, lbl]) => (
                             <div key={lbl} className="flex flex-col items-center gap-0.5">
                                 <span className="text-base font-medium font-mono" style={{ color: '#0f172a' }}>{val}</span>
                                 <span className="text-xs text-slate-400">{lbl}</span>

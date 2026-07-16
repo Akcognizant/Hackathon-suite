@@ -37,6 +37,10 @@ export const fetchAnalytics = (sessionId) =>
 export const fetchHistory = (candidateId) =>
   api.get('/sessions', { params: { candidateId } })
 
+// Read-only check for a resumable in-progress attempt (for the dashboard prompt)
+export const fetchInProgress = (candidateId) =>
+  api.get('/sessions/in-progress', { params: { candidateId } })
+
 // ── Hackathon gate / SSO ──────────────────────────────
 // Pass/attempt status for the current candidate.
 export const fetchGateStatus = () => api.get('/gate/status')
