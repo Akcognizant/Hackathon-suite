@@ -162,10 +162,10 @@ function MessagesInbox({ open = false }) {
     <div
       role="dialog"
       aria-label="Messages and notifications"
-      className="absolute right-0 top-[calc(100%+0.625rem)] z-50 w-[22rem] origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
+      className="absolute right-0 top-[calc(100%+0.625rem)] z-50 flex max-h-[calc(100vh-6rem)] w-[22rem] origin-top-right flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black/5"
     >
       {/* Premium gradient header */}
-      <div className="relative flex items-center gap-3 bg-gradient-to-r from-indigo-950 via-blue-900 to-blue-800 px-4 py-3.5 text-white">
+      <div className="relative flex shrink-0 items-center gap-3 bg-gradient-to-r from-indigo-950 via-blue-900 to-blue-800 px-4 py-3.5 text-white">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 backdrop-blur">
           <BellIcon className="h-5 w-5" />
         </span>
@@ -176,7 +176,7 @@ function MessagesInbox({ open = false }) {
       </div>
 
       {/* Compose */}
-      <div className="border-b border-slate-100 bg-slate-50/70 p-3.5">
+      <div className="shrink-0 border-b border-slate-100 bg-slate-50/70 p-3.5">
         <div className="space-y-2">
           {/* Recipient group — admins can also broadcast to all participants. */}
           {canBroadcast && (
@@ -233,22 +233,22 @@ function MessagesInbox({ open = false }) {
       </div>
 
       {/* Inbox */}
-      <div className="flex items-center justify-between px-4 pb-1.5 pt-3">
+      <div className="flex shrink-0 items-center justify-between px-4 pb-1.5 pt-3">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Inbox</p>
-        {hasClearable && (
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={clearing}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-          >
-            <TrashIcon className="h-3.5 w-3.5" />
-            {clearing ? 'Clearing…' : 'Clear'}
-          </button>
-        )}
+        {/* Always visible; disabled when there's nothing the user can clear. */}
+        <button
+          type="button"
+          onClick={handleClear}
+          disabled={!hasClearable || clearing}
+          title={hasClearable ? 'Clear your direct messages' : 'Nothing to clear'}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
+        >
+          <TrashIcon className="h-3.5 w-3.5" />
+          {clearing ? 'Clearing…' : 'Clear'}
+        </button>
       </div>
 
-      <div className="max-h-80 overflow-y-auto px-2 pb-2">
+      <div className="min-h-[20rem] flex-1 overflow-y-auto px-2 pb-2">
         {loading ? (
           <div className="space-y-2 px-2 py-2">
             {[0, 1, 2].map((i) => (
