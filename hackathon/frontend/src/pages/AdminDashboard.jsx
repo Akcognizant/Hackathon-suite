@@ -7,7 +7,6 @@ import axiosClient from '../api/axiosClient'
 import Button from '../components/ui/Button'
 import { useToast } from '../context/ToastContext'
 
-const MEMBERS_PER_TEAM = 3
 const ACTIVITY_PAGE_SIZE = 5
 
 // Pulsing red alert dot for "action required" metrics.
@@ -93,6 +92,14 @@ function ClockIcon({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
       <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function SubmissionsIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
     </svg>
   )
 }
@@ -198,25 +205,21 @@ function AdminDashboard() {
     return () => document.removeEventListener('keydown', handleKey)
   }, [showClearModal, clearing])
 
-  const uniqueHackathons = [...new Set(data.map((d) => d.hackathon).filter(Boolean))]
-
-  // --- Stat-card metrics, all derived directly from the live submissions array ---
+  // --- Metrics derived directly from the live submissions array ---
   const totalSubmissions = data.length
-  const pendingCount = data.filter(
-    (d) => d.status?.toUpperCase() === 'PENDING',
-  ).length
-  const scoredCount = data.filter(
-    (d) => d.score !== null && d.score !== undefined,
-  ).length
+  const statusOf = (d) => (d.status || '').toUpperCase()
+  const pendingCount = data.filter((d) => statusOf(d) === 'PENDING').length
+  const approvedCount = data.filter((d) => statusOf(d) === 'APPROVED').length
+  const rejectedCount = data.filter((d) => statusOf(d) === 'REJECTED').length
+  const scoredCount = data.filter((d) => d.score !== null && d.score !== undefined).length
+  const scoringPct = totalSubmissions ? Math.round((scoredCount / totalSubmissions) * 100) : 0
 
-  // Participants per hackathon = (teams in that hackathon) × members per team.
-  const participantsPerHackathon = uniqueHackathons.map((name) => {
-    const teams = new Set(
-      data.filter((d) => d.hackathon === name).map((d) => d.team),
-    )
-    return { name, count: teams.size * MEMBERS_PER_TEAM }
-  })
-  const maxCount = Math.max(...participantsPerHackathon.map((p) => p.count), 1)
+  // Review-pipeline segments for the status-breakdown bar.
+  const pipeline = [
+    { label: 'Pending', count: pendingCount, bar: 'bg-amber-400', dot: 'bg-amber-400' },
+    { label: 'Approved', count: approvedCount, bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
+    { label: 'Rejected', count: rejectedCount, bar: 'bg-rose-500', dot: 'bg-rose-500' },
+  ]
 
   // The feed reflects ONLY real, persisted activities (actual user actions),
   // accumulated across the pages loaded so far via "Load More".
@@ -309,34 +312,68 @@ function AdminDashboard() {
 
           {/* Chart + activity feed — stacked on mobile, side-by-side on desktop */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Bar chart */}
+            {/* Review pipeline — real, actionable submission funnel + scoring progress */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm ring-1 ring-black/5">
               <h3 className="mb-5 flex items-center gap-2 text-lg font-semibold text-slate-900">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                  <UsersIcon className="h-4 w-4" />
+                  <SubmissionsIcon className="h-4 w-4" />
                 </span>
-                Participants per Hackathon
+                Review Pipeline
               </h3>
-              {participantsPerHackathon.length === 0 ? (
-                <p className="text-sm text-slate-400">No hackathon data yet.</p>
+
+              {totalSubmissions === 0 ? (
+                <p className="text-sm text-slate-400">No submissions yet.</p>
               ) : (
-                <div className="space-y-4">
-                  {participantsPerHackathon.map((item) => (
-                    <div key={item.name}>
-                      <div className="mb-1.5 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">{item.name}</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
-                          {item.count}
-                        </span>
-                      </div>
-                      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 shadow-[0_1px_6px_rgba(37,99,235,0.4)] transition-all duration-700 ease-out"
-                          style={{ width: `${(item.count / maxCount) * 100}%` }}
-                        />
-                      </div>
+                <div className="space-y-6">
+                  {/* Status funnel: one segmented bar across all submissions */}
+                  <div>
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <span className="text-sm font-medium text-slate-700">Submissions by status</span>
+                      <span className="text-xs font-semibold tabular-nums text-slate-500">{totalSubmissions} total</span>
                     </div>
-                  ))}
+                    <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
+                      {pipeline.map((seg) =>
+                        seg.count > 0 ? (
+                          <div
+                            key={seg.label}
+                            className={`h-full ${seg.bar} transition-all duration-700 ease-out`}
+                            style={{ width: `${(seg.count / totalSubmissions) * 100}%` }}
+                            title={`${seg.label}: ${seg.count}`}
+                          />
+                        ) : null,
+                      )}
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {pipeline.map((seg) => (
+                        <div key={seg.label} className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${seg.dot}`} />
+                          <span className="text-xs text-slate-500">{seg.label}</span>
+                          <span className="ml-auto text-xs font-bold tabular-nums text-slate-800">{seg.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Scoring progress */}
+                  <div className="border-t border-slate-100 pt-5">
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <span className="text-sm font-medium text-slate-700">Scoring progress</span>
+                      <span className="text-xs font-semibold tabular-nums text-slate-500">
+                        {scoredCount}/{totalSubmissions} scored · {scoringPct}%
+                      </span>
+                    </div>
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_1px_6px_rgba(16,185,129,0.4)] transition-all duration-700 ease-out"
+                        style={{ width: `${scoringPct}%` }}
+                      />
+                    </div>
+                    {pendingCount > 0 && (
+                      <p className="mt-2 text-xs text-amber-600">
+                        {pendingCount} submission{pendingCount === 1 ? '' : 's'} still awaiting review.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -362,7 +399,18 @@ function AdminDashboard() {
               {recentActivity.length === 0 ? (
                 <p className="text-sm text-slate-400">No recent activity.</p>
               ) : (
-                <>
+                // Fixed-height, internally scrolling feed. Scrolling near the bottom
+                // lazily loads the next page (infinite scroll) — the panel height
+                // stays put instead of the whole page growing.
+                <div
+                  className="max-h-[22rem] overflow-y-auto pr-1"
+                  onScroll={(e) => {
+                    const el = e.currentTarget
+                    if (hasMore && !loadingMore && el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+                      handleLoadMore()
+                    }
+                  }}
+                >
                   <ol className="relative space-y-6">
                     {/* Continuous polished timeline line */}
                     <span
@@ -386,19 +434,13 @@ function AdminDashboard() {
                     ))}
                   </ol>
 
-                  {hasMore && (
-                    <div className="mt-6 flex justify-center">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleLoadMore}
-                        isLoading={loadingMore}
-                      >
-                        {loadingMore ? 'Loading…' : 'Load More'}
-                      </Button>
-                    </div>
+                  {loadingMore && (
+                    <p className="py-3 text-center text-xs text-slate-400">Loading more…</p>
                   )}
-                </>
+                  {!hasMore && recentActivity.length > 5 && (
+                    <p className="py-3 text-center text-xs text-slate-300">You’re all caught up.</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
