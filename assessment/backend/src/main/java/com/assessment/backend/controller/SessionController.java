@@ -74,6 +74,16 @@ public class SessionController {
         }
     }
 
+    // GET /api/sessions/in-progress?candidateId=xxx — read-only resume check
+    @GetMapping("/in-progress")
+    public ResponseEntity<?> inProgress(@RequestParam UUID candidateId) {
+        try {
+            return ResponseEntity.ok(sessionService.getInProgress(candidateId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+        }
+    }
+
     // GET /api/sessions?candidateId=xxx  (dashboard history)
     @GetMapping
     public ResponseEntity<?> getHistory(@RequestParam UUID candidateId) {

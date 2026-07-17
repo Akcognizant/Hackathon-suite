@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import UnansweredWarningModal from '../components/UnansweredWarningModal'
+import LeaveAssessmentModal from '../components/LeaveAssessmentModal'
 import ActivityRenderer from '../components/activities/ActivityRenderer'
 import PatternDisplay from '../components/PatternDisplay'
 import { startSession, autosaveResponse, submitSession } from '../api'
@@ -72,6 +73,7 @@ export default function AssessmentPage() {
     const [remaining, setRemaining] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [showUnanswered, setShowUnanswered] = useState(false)
+    const [showLeave, setShowLeave] = useState(false)
     const [reviewFlags, setReviewFlags] = useState({})
 
     const questionTimer = useTimer()
@@ -96,7 +98,7 @@ export default function AssessmentPage() {
                 if (data.expired) { navigate(`/results/${data.sessionId}`); return }
 
                 setSessionId(data.sessionId)
-                setQuestions((data.questions || []).map(q => ({
+                const mapped = (data.questions || []).map(q => ({
                     id: q.id,
                     section: q.section,
                     type: q.questionType,
@@ -107,7 +109,8 @@ export default function AssessmentPage() {
                     items: q.items,
                     zones: q.zones,
                     suffix: q.suffix,
-                })))
+                }))
+                setQuestions(mapped)
 
                 // Restore answers/telemetry saved on a previous visit to this attempt.
                 const ans = {}, tpq = {}, apq = {}
@@ -119,6 +122,13 @@ export default function AssessmentPage() {
                     if (s.attemptCount) apq[s.questionId] = s.attemptCount
                 })
                 setAnswers(ans); setTimePerQuestion(tpq); setAttemptsPerQuestion(apq)
+
+                // On resume, reopen at the first unanswered question so the candidate
+                // continues where they left off instead of restarting at Q1.
+                if (data.resumed) {
+                    const firstUnanswered = mapped.findIndex(q => !hasAnswer(q, ans))
+                    if (firstUnanswered > 0) setCurrentIndex(firstUnanswered)
+                }
 
                 try { setReviewFlags(JSON.parse(localStorage.getItem(`review_${data.sessionId}`) || '{}')) } catch { /* ignore */ }
 
@@ -157,19 +167,13 @@ export default function AssessmentPage() {
         return () => window.removeEventListener('beforeunload', handler)
     }, [])
 
-    // ── Warn on the browser Back button ──
+    // ── Warn on the browser Back button (custom modal, not native confirm) ──
     useEffect(() => {
         window.history.pushState(null, '', window.location.href)
         const onPopState = () => {
-            const leave = window.confirm(
-                'Leave the assessment? Your answers are saved and you can resume — but the timer keeps running.'
-            )
-            if (leave) {
-                window.removeEventListener('popstate', onPopState)
-                navigate('/dashboard')
-            } else {
-                window.history.pushState(null, '', window.location.href)
-            }
+            // Re-pin history so we stay on the page, then ask via the in-app modal.
+            window.history.pushState(null, '', window.location.href)
+            setShowLeave(true)
         }
         window.addEventListener('popstate', onPopState)
         return () => window.removeEventListener('popstate', onPopState)
@@ -525,6 +529,13 @@ export default function AssessmentPage() {
                     reviewNumbers={questions.map((q, i) => reviewFlags[q.id] ? i + 1 : null).filter(Boolean)}
                     onConfirm={() => { setShowUnanswered(false); handleSubmit() }}
                     onClose={() => setShowUnanswered(false)}
+                />
+            )}
+
+            {showLeave && (
+                <LeaveAssessmentModal
+                    onStay={() => setShowLeave(false)}
+                    onLeave={() => { setShowLeave(false); navigate('/dashboard') }}
                 />
             )}
         </div>
