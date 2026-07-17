@@ -343,12 +343,12 @@ function AdminDashboard() {
                         ) : null,
                       )}
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
                       {pipeline.map((seg) => (
-                        <div key={seg.label} className="flex items-center gap-2">
+                        <div key={seg.label} className="flex items-center gap-1.5">
                           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${seg.dot}`} />
                           <span className="text-xs text-slate-500">{seg.label}</span>
-                          <span className="ml-auto text-xs font-bold tabular-nums text-slate-800">{seg.count}</span>
+                          <span className="text-xs font-bold tabular-nums text-slate-800">{seg.count}</span>
                         </div>
                       ))}
                     </div>
