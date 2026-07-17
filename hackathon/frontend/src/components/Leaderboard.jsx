@@ -10,19 +10,44 @@ import DataTable from './ui/DataTable'
 
 const PAGE_SIZE = 10
 
+// Metallic circular badge for the top 3; muted numeric chip for the rest.
 function RankCell({ rank }) {
-  const tone = rank === 1 ? 'text-amber-600' : rank === 2 ? 'text-slate-500' : rank === 3 ? 'text-orange-600' : 'text-slate-400'
+  if (rank <= 3) {
+    const grad =
+      rank === 1 ? 'from-yellow-400 to-amber-500' : rank === 2 ? 'from-slate-300 to-slate-400' : 'from-orange-400 to-amber-600'
+    const glow =
+      rank === 1 ? 'shadow-amber-400/40' : rank === 2 ? 'shadow-slate-400/40' : 'shadow-orange-400/40'
+    return (
+      <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${grad} text-sm font-black text-white shadow-md ${glow}`}>
+        {rank}
+      </span>
+    )
+  }
   return (
-    <span className="inline-flex items-center gap-1.5">
-      {rank <= 3 && (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 ${tone}`} aria-hidden="true">
-          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" />
-          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-        </svg>
-      )}
-      <span className={`font-bold tabular-nums ${tone}`}>#{rank}</span>
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-bold tabular-nums text-slate-500">
+      {rank}
     </span>
   )
+}
+
+function initials(name) {
+  if (!name) return '—'
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
+}
+
+// Distinct avatar tint per team so the roster reads at a glance.
+function avatarTone(name) {
+  const tones = [
+    'bg-blue-100 text-blue-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-amber-100 text-amber-700',
+    'bg-rose-100 text-rose-700',
+    'bg-purple-100 text-purple-700',
+  ]
+  let h = 0
+  for (let i = 0; i < (name || '').length; i += 1) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return tones[h % tones.length]
 }
 
 function DownloadIcon({ className }) {
@@ -97,11 +122,42 @@ function Leaderboard() {
 
   const columns = [
     { key: 'rank', header: 'Rank', render: (r) => <RankCell rank={r.rank} /> },
-    { key: 'team', header: 'Team', render: (r) => <span className="font-medium text-slate-900">{r.team}</span> },
+    {
+      key: 'team',
+      header: 'Team',
+      render: (r) => (
+        <div className="flex items-center gap-3">
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarTone(r.team)}`}>
+            {initials(r.team)}
+          </span>
+          <span className="font-semibold text-slate-900">{r.team}</span>
+        </div>
+      ),
+    },
     { key: 'projectTitle', header: 'Project', render: (r) => r.projectTitle || <span className="italic text-slate-400">—</span> },
     { key: 'hackathon', header: 'Hackathon', render: (r) => <span className="text-slate-500">{r.hackathon}</span> },
-    { key: 'score', header: 'Score', align: 'right', render: (r) => <span className="text-lg font-extrabold tabular-nums text-indigo-950">{r.score}</span> },
+    {
+      key: 'score',
+      header: 'Score',
+      align: 'right',
+      render: (r) => (
+        <span className="inline-flex items-baseline gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-base font-extrabold tabular-nums text-indigo-700">
+          {r.score}
+          <span className="text-[10px] font-semibold uppercase text-indigo-400">pts</span>
+        </span>
+      ),
+    },
   ]
+
+  // Subtle metallic tint for the podium rows (works regardless of page).
+  const rowClassName = (r) =>
+    r.rank === 1
+      ? 'bg-amber-50/60'
+      : r.rank === 2
+        ? 'bg-slate-50/70'
+        : r.rank === 3
+          ? 'bg-orange-50/50'
+          : ''
 
   return (
     <div>
@@ -145,6 +201,7 @@ function Leaderboard() {
         totalElements={filtered.length}
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
+        rowClassName={rowClassName}
       />
     </div>
   )
