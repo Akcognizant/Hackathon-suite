@@ -99,6 +99,9 @@ export default function ProfileSettingsModal({ open, onClose }) {
   const email = profile?.email || ''
   const name = profile?.name || ''
   const role = (profile?.role || '').toUpperCase()
+  // Fall back to the email's username (before @) when no display name is set,
+  // e.g. admin@cognizant.com -> "admin".
+  const displayName = name || (email ? email.split('@')[0] : '')
 
   return (
     <div
@@ -118,7 +121,7 @@ export default function ProfileSettingsModal({ open, onClose }) {
             {initials(email, name)}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-lg font-bold leading-tight">{name || 'Your account'}</p>
+            <p className="truncate text-lg font-bold capitalize leading-tight">{displayName || 'Your account'}</p>
             <p className="truncate text-sm text-blue-200">{email || '—'}</p>
           </div>
           <button
@@ -144,7 +147,7 @@ export default function ProfileSettingsModal({ open, onClose }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-slate-500">Name</dt>
-                <dd className="truncate font-medium text-slate-800">{loading ? '…' : name || '—'}</dd>
+                <dd className="truncate font-medium capitalize text-slate-800">{loading ? '…' : displayName || '—'}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-slate-500">Role</dt>
