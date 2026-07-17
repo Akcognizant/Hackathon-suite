@@ -16,6 +16,7 @@ import { usePermissions } from '../hooks/usePermissions'
 import MessagesInbox from './MessagesInbox'
 import LogoutConfirmModal from './LogoutConfirmModal'
 import ProfileSettingsModal from './ProfileSettingsModal'
+import AdminQuickstartModal from './AdminQuickstartModal'
 
 /* ------------------------------ Icons ------------------------------ */
 
@@ -278,6 +279,7 @@ function AdminLayout() {
   // Single state powering the unified inbox — both the envelope and the bell open it.
   const [isInboxOpen, setIsInboxOpen] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const [isQuickstartOpen, setIsQuickstartOpen] = useState(false)
   const inboxRef = useRef(null)
 
   // AI assistant chat state (UI-only demo).
@@ -890,10 +892,13 @@ function AdminLayout() {
 
             {/* Cards */}
             <div className="grid grid-cols-2 gap-4 px-6 pb-8">
-                {/* Admin Quickstart → docs in a new tab */}
+                {/* Admin Quickstart → in-app getting-started guide */}
                 <button
                   type="button"
-                  onClick={() => window.open('/docs', '_blank')}
+                  onClick={() => {
+                    setIsHelpOpen(false)
+                    setIsQuickstartOpen(true)
+                  }}
                   className="group relative flex cursor-pointer flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-blue-300 hover:bg-slate-50 active:scale-[0.98]"
                 >
                   <ArrowUpRightIcon className="absolute right-3 top-3 h-4 w-4 text-slate-300 transition-colors group-hover:text-blue-500" />
@@ -967,6 +972,7 @@ function AdminLayout() {
       )}
 
       <ProfileSettingsModal open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <AdminQuickstartModal open={isQuickstartOpen} onClose={() => setIsQuickstartOpen(false)} />
     </div>
   )
 }
