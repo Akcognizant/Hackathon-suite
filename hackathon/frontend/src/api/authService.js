@@ -82,6 +82,17 @@ export async function requestAccess({ name, email, password, role, reason }) {
   await axiosClient.post('/api/auth/access-request', { name, email, password, role, reason })
 }
 
+/** GET /api/account/me -> { email, name, role } for the signed-in user. */
+export async function getProfile() {
+  const { data } = await axiosClient.get('/api/account/me')
+  return data
+}
+
+/** POST /api/account/change-password — verifies current, sets new. Throws on 400. */
+export async function changePassword(currentPassword, newPassword) {
+  await axiosClient.post('/api/account/change-password', { currentPassword, newPassword })
+}
+
 /** The current session's role ('ADMIN' | 'JUDGE' | 'PARTICIPANT' | ''). */
 export function currentRole() {
   return (localStorage.getItem(ROLE_KEY) || '').toUpperCase()

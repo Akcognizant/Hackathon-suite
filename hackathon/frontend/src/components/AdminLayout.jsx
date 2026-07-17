@@ -15,6 +15,7 @@ import { accessRequestCount } from '../api/accessRequestApi'
 import { usePermissions } from '../hooks/usePermissions'
 import MessagesInbox from './MessagesInbox'
 import LogoutConfirmModal from './LogoutConfirmModal'
+import ProfileSettingsModal from './ProfileSettingsModal'
 
 /* ------------------------------ Icons ------------------------------ */
 
@@ -269,6 +270,7 @@ function AdminLayout() {
     ? { label: 'Judge', className: 'bg-emerald-100 text-emerald-800' }
     : { label: 'Admin', className: 'bg-indigo-100 text-indigo-800' }
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const userMenuRef = useRef(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -595,7 +597,10 @@ function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => setIsUserMenuOpen(false)}
+                  onClick={() => {
+                    setIsUserMenuOpen(false)
+                    setIsProfileOpen(true)
+                  }}
                   className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
                 >
                   <SettingsIcon className="h-4 w-4 text-slate-400 group-hover:text-slate-600" />
@@ -960,6 +965,8 @@ function AdminLayout() {
           onClose={() => setShowLogoutConfirm(false)}
         />
       )}
+
+      <ProfileSettingsModal open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </div>
   )
 }
