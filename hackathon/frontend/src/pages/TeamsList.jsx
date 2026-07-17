@@ -82,6 +82,7 @@ function SkeletonCard() {
 function TeamsList() {
   const [pageData, setPageData] = useState({ content: [], totalElements: 0, totalPages: 0 })
   const [page, setPage] = useState(0)
+  const [jumpValue, setJumpValue] = useState('') // "Jump to page" input (1-based)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedTeam, setSelectedTeam] = useState(null)
@@ -128,6 +129,16 @@ function TeamsList() {
   const { content, totalElements, totalPages } = pageData
   const from = totalElements === 0 ? 0 : page * PAGE_SIZE + 1
   const to = Math.min(totalElements, page * PAGE_SIZE + content.length)
+
+  // "Jump to page": clamp the entered 1-based page into range, then convert to the
+  // 0-based page this view tracks.
+  const goToPage = () => {
+    const parsed = parseInt(jumpValue, 10)
+    if (Number.isNaN(parsed)) return
+    const clamped = Math.min(totalPages, Math.max(1, parsed))
+    setPage(clamped - 1)
+    setJumpValue('')
+  }
 
   return (
     <div>
@@ -210,6 +221,36 @@ function TeamsList() {
             >
               Next
             </button>
+
+            {/* Jump to page — matches the DataTable pager used elsewhere. */}
+            {totalPages > 1 && (
+              <span className="ml-1 flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                <span className="text-slate-500">Jump to</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={jumpValue}
+                  onChange={(event) => setJumpValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      goToPage()
+                    }
+                  }}
+                  aria-label="Jump to page"
+                  className="h-8 w-14 rounded-lg border border-slate-200 px-2 text-center tabular-nums text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                />
+                <button
+                  type="button"
+                  onClick={goToPage}
+                  disabled={jumpValue.trim() === ''}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Go
+                </button>
+              </span>
+            )}
           </div>
         </div>
       )}

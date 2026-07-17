@@ -6,7 +6,7 @@
 //
 // Icons are inline SVGs (no extra dependency). Child routes render via <Outlet/>.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import axiosClient from '../api/axiosClient'
@@ -15,23 +15,6 @@ import { accessRequestCount } from '../api/accessRequestApi'
 import { usePermissions } from '../hooks/usePermissions'
 import MessagesInbox from './MessagesInbox'
 import LogoutConfirmModal from './LogoutConfirmModal'
-
-const STORAGE_KEY = 'shared_hackathon_data'
-
-// Read PENDING submissions from the shared store (for the notification badge
-// and dropdown list).
-function loadPendingItems() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const data = JSON.parse(stored)
-      return data.filter((d) => d.status?.toUpperCase() === 'PENDING')
-    }
-  } catch {
-    // Corrupt/unreadable storage — treat as none.
-  }
-  return []
-}
 
 /* ------------------------------ Icons ------------------------------ */
 
@@ -314,14 +297,6 @@ function AdminLayout() {
       '',
   )
 
-  // Recompute the pending badge on every route change (the layout itself does
-  // not remount between routes, so a one-time read would go stale). Derived via
-  // useMemo — a side-effect-free localStorage read, no effect/setState needed.
-  // location.pathname is the intentional re-read trigger (the memo body reads
-  // localStorage, not the path, so exhaustive-deps can't see the link).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const pendingItems = useMemo(() => loadPendingItems(), [location.pathname])
-
   const handleLogout = () => {
     setIsUserMenuOpen(false)
     setShowLogoutConfirm(true)
@@ -560,13 +535,13 @@ function AdminLayout() {
             <button
               type="button"
               onClick={() => setIsInboxOpen((open) => !open)}
-              aria-label={`Messages & notifications (${unreadMessages} unread, ${pendingItems.length} pending)`}
+              aria-label={`Messages & notifications (${unreadMessages} unread)`}
               className="relative rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <BellIcon className={iconBase} />
-              {(unreadMessages + pendingItems.length) > 0 && (
+              {unreadMessages > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
-                  {unreadMessages + pendingItems.length}
+                  {unreadMessages}
                 </span>
               )}
             </button>

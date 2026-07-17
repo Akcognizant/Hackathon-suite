@@ -3,10 +3,8 @@
 // hackathon), and a paginated Recent Activity feed backed by the activities API.
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import axiosClient from '../api/axiosClient'
 import Button from '../components/ui/Button'
-import ProtectedRole from '../components/ProtectedRole'
 import { useToast } from '../context/ToastContext'
 
 const MEMBERS_PER_TEAM = 3
@@ -118,7 +116,6 @@ function AdminDashboard() {
   const [clearing, setClearing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
   const { showToast } = useToast()
 
   // Fetch live submissions (metrics/chart) and the first page of the activity
@@ -231,7 +228,12 @@ function AdminDashboard() {
   }))
 
   const stats = [
-    { title: 'Total Submissions', value: totalSubmissions, Icon: UsersIcon },
+    {
+      title: 'Total Submissions',
+      value: totalSubmissions,
+      Icon: UsersIcon,
+      tone: { grad: 'from-blue-500 to-indigo-600', bar: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/30' },
+    },
     {
       title: 'Pending Reviews',
       value: (
@@ -241,26 +243,26 @@ function AdminDashboard() {
         </span>
       ),
       Icon: ClockIcon,
+      tone: { grad: 'from-amber-400 to-orange-500', bar: 'from-amber-400 to-orange-500', shadow: 'shadow-amber-500/30' },
     },
-    { title: 'Scored', value: scoredCount, Icon: TrophyIcon },
+    {
+      title: 'Scored',
+      value: scoredCount,
+      Icon: TrophyIcon,
+      tone: { grad: 'from-emerald-500 to-teal-600', bar: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/30' },
+    },
   ]
 
   return (
     <div>
-      {/* Page header with Quick Actions */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Page header */}
+      <div className="mb-6 flex items-center gap-3">
+        <span className="h-9 w-1.5 rounded-full bg-gradient-to-b from-blue-600 to-indigo-600" />
         <div>
           <h2 className="text-2xl font-bold text-indigo-950">Dashboard</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-slate-500">
             Overview of hackathon activity across the portal.
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <ProtectedRole role="ADMIN">
-            <Button variant="primary" onClick={() => navigate('/hackathons/new')}>
-              + New Hackathon
-            </Button>
-          </ProtectedRole>
         </div>
       </div>
 
@@ -281,18 +283,24 @@ function AdminDashboard() {
               return (
                 <div
                   key={stat.title}
-                  className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
-                  {/* Faint decorative background icon */}
-                  <Icon className="pointer-events-none absolute -right-4 -top-4 h-28 w-28 text-slate-100 transition-transform duration-300 group-hover:scale-110" />
+                  {/* Top accent bar */}
+                  <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stat.tone.bar}`} />
 
-                  <div className="relative">
-                    <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                    <div className="mt-2 flex items-end gap-3">
-                      <span className="text-4xl font-bold tabular-nums text-slate-800">
+                  <div className="relative flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-500">{stat.title}</p>
+                      <span className="mt-2 block text-4xl font-extrabold tracking-tight tabular-nums text-slate-900">
                         {stat.value}
                       </span>
                     </div>
+                    {/* Gradient icon chip */}
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg ${stat.tone.grad} ${stat.tone.shadow} transition-transform duration-300 group-hover:scale-110`}
+                    >
+                      <Icon className="h-6 w-6" />
+                    </span>
                   </div>
                 </div>
               )
@@ -302,27 +310,28 @@ function AdminDashboard() {
           {/* Chart + activity feed — stacked on mobile, side-by-side on desktop */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Bar chart */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-md">
-              <h3 className="mb-5 text-lg font-semibold text-slate-900">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm ring-1 ring-black/5">
+              <h3 className="mb-5 flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                  <UsersIcon className="h-4 w-4" />
+                </span>
                 Participants per Hackathon
               </h3>
               {participantsPerHackathon.length === 0 ? (
                 <p className="text-sm text-slate-400">No hackathon data yet.</p>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {participantsPerHackathon.map((item) => (
                     <div key={item.name}>
                       <div className="mb-1.5 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">
-                          {item.name}
-                        </span>
-                        <span className="tabular-nums text-slate-500">
+                        <span className="font-medium text-slate-700">{item.name}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
                           {item.count}
                         </span>
                       </div>
-                      <div className="h-4 w-full rounded-full bg-slate-100">
+                      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 shadow-inner">
                         <div
-                          className="h-4 rounded-full bg-gradient-to-r from-blue-700 to-cyan-500 transition-all duration-700 ease-out"
+                          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 shadow-[0_1px_6px_rgba(37,99,235,0.4)] transition-all duration-700 ease-out"
                           style={{ width: `${(item.count / maxCount) * 100}%` }}
                         />
                       </div>
@@ -333,9 +342,12 @@ function AdminDashboard() {
             </div>
 
             {/* Recent activity timeline */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-md">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm ring-1 ring-black/5">
               <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 text-white">
+                    <ClockIcon className="h-4 w-4" />
+                  </span>
                   Recent Activity
                 </h3>
                 <Button

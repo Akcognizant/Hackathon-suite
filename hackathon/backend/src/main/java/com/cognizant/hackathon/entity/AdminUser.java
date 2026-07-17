@@ -14,6 +14,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "admins")
 @Data
@@ -37,4 +39,11 @@ public class AdminUser {
 
     @Enumerated(EnumType.STRING)
     private AdminRole role;
+
+    /**
+     * When this user last cleared their inbox. Direct messages are deleted on clear,
+     * but announcements are shared/global — so we hide announcements created on or
+     * before this timestamp for THIS user only (per-user clear, non-destructive).
+     */
+    private Instant inboxClearedAt;
 }

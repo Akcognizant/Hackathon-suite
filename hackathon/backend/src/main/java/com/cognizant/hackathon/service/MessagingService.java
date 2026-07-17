@@ -80,11 +80,24 @@ public class MessagingService {
     public List<MessageDto> inbox() {
         AdminUser me = currentUser();
         Map<Long, String> emails = emailMap();
+        Instant clearedAt = me.getInboxClearedAt();
         return messageRepository
                 .findByReceiverIdOrMessageTypeOrderByCreatedAtDesc(me.getId(), MessageType.ANNOUNCEMENT)
                 .stream()
+                // Hide announcements the user already cleared (shared rows can't be deleted
+                // per-user, so we filter them out by the clear timestamp). Direct messages
+                // are actually deleted on clear, so anything here is post-clear.
+                .filter(message -> !isClearedAnnouncement(message, clearedAt))
                 .map(message -> toDto(message, emails))
                 .toList();
+    }
+
+    /** True for an announcement created on/before the user's last inbox clear. */
+    private boolean isClearedAnnouncement(Message message, Instant clearedAt) {
+        return clearedAt != null
+                && message.getMessageType() == MessageType.ANNOUNCEMENT
+                && message.getCreatedAt() != null
+                && !message.getCreatedAt().isAfter(clearedAt);
     }
 
     /** Announcements only — for a participant-facing notifications view. */
@@ -109,7 +122,13 @@ public class MessagingService {
      */
     @Transactional
     public void clearInbox() {
-        messageRepository.deleteByReceiverId(currentUser().getId());
+        AdminUser me = currentUser();
+        // Direct messages are the user's own — delete them outright.
+        messageRepository.deleteByReceiverId(me.getId());
+        // Announcements are shared/global; record the clear time so they're hidden
+        // from THIS user's inbox from now on (without affecting anyone else).
+        me.setInboxClearedAt(Instant.now());
+        adminUserRepository.save(me);
     }
 
     /** Marks a message read — only the receiver may do so (else it's "not found"). */
