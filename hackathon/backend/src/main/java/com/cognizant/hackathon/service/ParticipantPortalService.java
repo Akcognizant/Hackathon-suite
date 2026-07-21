@@ -8,6 +8,7 @@ import com.cognizant.hackathon.dto.ParticipantMemberDto;
 import com.cognizant.hackathon.dto.ParticipantSubmissionDto;
 import com.cognizant.hackathon.dto.ParticipantTeamDto;
 import com.cognizant.hackathon.entity.AdminUser;
+import com.cognizant.hackathon.entity.enums.AdminRole;
 import com.cognizant.hackathon.entity.Hackathon;
 import com.cognizant.hackathon.entity.Leaderboard;
 import com.cognizant.hackathon.entity.Participant;
@@ -100,6 +101,7 @@ public class ParticipantPortalService {
     @Transactional
     public ParticipantTeamDto createTeam(CreateParticipantTeamRequest req) {
         AdminUser me = currentAccount();
+        assertParticipant(me);
         Hackathon hackathon = hackathonRepository.findById(req.hackathonId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Hackathon not found"));
@@ -127,10 +129,17 @@ public class ParticipantPortalService {
 
         String myEmail = me.getEmail().toLowerCase();
         for (String memberEmail : memberEmails) {
-            // Added members (other than the creator) must be registered accounts.
-            if (!memberEmail.equals(myEmail) && adminUserRepository.findByEmail(memberEmail).isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "No such user exists: " + memberEmail);
+            // Added members (other than the creator) must be registered PARTICIPANT
+            // accounts — a participant account only exists after clearing the
+            // assessment, so admins/judges and non-passers are rejected here.
+            if (!memberEmail.equals(myEmail)) {
+                AdminUser member = adminUserRepository.findByEmail(memberEmail)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "No such user exists: " + memberEmail));
+                if (member.getRole() != AdminRole.PARTICIPANT) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Only hackathon participants can be added to a team: " + memberEmail);
+                }
             }
             // Each member must be free for this hackathon.
             if (myHackathonIds(memberEmail).contains(hackathon.getId())) {
@@ -163,6 +172,7 @@ public class ParticipantPortalService {
     @Transactional
     public ParticipantTeamDto joinTeam(Long teamId) {
         AdminUser me = currentAccount();
+        assertParticipant(me);
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found"));
 
@@ -251,8 +261,12 @@ public class ParticipantPortalService {
         if (email.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
         }
-        if (adminUserRepository.findByEmail(email).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No such user exists: " + email);
+        AdminUser candidate = adminUserRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "No such user exists: " + email));
+        if (candidate.getRole() != AdminRole.PARTICIPANT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only hackathon participants can be added to a team: " + email);
         }
         if (roster.stream().anyMatch(p -> email.equalsIgnoreCase(p.getEmail()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, email + " is already on this team");
@@ -494,6 +508,14 @@ public class ParticipantPortalService {
                     int at = email.indexOf('@');
                     return at > 0 ? email.substring(0, at) : email;
                 });
+    }
+
+    /** Only PARTICIPANT accounts may form/join teams — admins and judges cannot. */
+    private void assertParticipant(AdminUser user) {
+        if (user.getRole() != AdminRole.PARTICIPANT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only hackathon participants can create or join teams.");
+        }
     }
 
     private AdminUser currentAccount() {
