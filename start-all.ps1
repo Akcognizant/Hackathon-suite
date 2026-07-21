@@ -11,6 +11,23 @@
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 
+# Load secrets from .env (git-ignored) into this process's environment so the
+# child app processes inherit them. Falls back to nothing if .env is missing —
+# copy .env.example to .env and fill in values.
+$envFile = Join-Path $root '.env'
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#') -and $line.Contains('=')) {
+            $name, $value = $line.Split('=', 2)
+            [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), 'Process')
+        }
+    }
+    Write-Host "Loaded environment from .env"
+} else {
+    Write-Warning ".env not found — copy .env.example to .env and set DB_PASSWORD / JWT_SECRET / HACKATHON_JWT_SECRET, or the backends won't start."
+}
+
 function Start-App($title, $dir, $cmd) {
     Write-Host "Starting $title ..."
     Start-Process powershell -ArgumentList @(

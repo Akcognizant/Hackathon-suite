@@ -19,5 +19,8 @@ bin/
 .DS_Store
 Thumbs.db
 
-# Env (keep .env.example if added later)
+# Env — real secrets live here, never committed. Only .env.example is tracked.
+.env
 .env.local
+.env.*
+!.env.example

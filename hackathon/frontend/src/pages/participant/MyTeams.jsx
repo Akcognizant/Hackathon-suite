@@ -12,7 +12,21 @@ import { SUBMISSION_STATUS_STYLES, submissionDisplayStatus } from '../../utils/s
 import Pagination from '../../components/ui/Pagination'
 import { usePagination } from '../../utils/usePagination'
 
-const STATUS_TONE = SUBMISSION_STATUS_STYLES
+const STATUS_TONE = { ...SUBMISSION_STATUS_STYLES, NOT_SUBMITTED: 'bg-red-100 text-red-700' }
+const STATUS_LABEL = { NOT_SUBMITTED: 'Not submitted' }
+const today = () => new Date().toISOString().slice(0, 10)
+
+// A team's badge: its submission status once it has one; otherwise, if the
+// hackathon is over and nothing was submitted, "Not submitted"; else team status.
+function teamBadgeStatus(team, submission) {
+  const subStatus = submissionDisplayStatus(submission)
+  if (subStatus) return subStatus
+  const over =
+    (team.hackathonStatus || '').toUpperCase() === 'COMPLETED' ||
+    (team.hackathonEndDate && team.hackathonEndDate < today())
+  if (over) return 'NOT_SUBMITTED'
+  return team.status
+}
 
 const AVATAR_TONES = [
   'bg-blue-100 text-blue-700',
@@ -89,7 +103,7 @@ function TeamRow({ team, status, size, isOpen, onToggle, onChanged }) {
           {team.memberCount}{max ? ` / ${max}` : ''} member{team.memberCount === 1 ? '' : 's'}
         </span>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[status] || 'bg-slate-100 text-slate-600'}`}>
-          {status}
+          {STATUS_LABEL[status] || status}
         </span>
       </button>
 
@@ -212,7 +226,7 @@ function MyTeams() {
               <TeamRow
                 key={t.id}
                 team={t}
-                status={submissionDisplayStatus(subByTeam[String(t.id)]) || t.status}
+                status={teamBadgeStatus(t, subByTeam[String(t.id)])}
                 size={sizeByHackathon[String(t.hackathonId)]}
                 isOpen={openId === t.id}
                 onToggle={() => setOpenId((cur) => (cur === t.id ? null : t.id))}
